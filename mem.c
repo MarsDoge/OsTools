@@ -5,13 +5,10 @@
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <string.h>
-
 #define LS7A_MISC_BASE_ADDR		0x10080000
-#define GPIO_BASE_ADDR_OFFSET 0x60000
 #define ACPI_BASE_ADDR				0x50000
-#define GPIO_CTL							0x900
 enum regfunc{
-  ACPI,RTC
+  ACPI,RTC,BEEP
 };
 
 typedef void (*deffunc)(int fd);
@@ -24,6 +21,7 @@ typedef struct __funcstruct
 
 }funcstruct;
 
+extern void Func3Example(int fd);
 void drawfunclist(funcstruct funclist[],int size)
 {
   int i,j;
@@ -36,7 +34,7 @@ void drawfunclist(funcstruct funclist[],int size)
 
   for(i = 0; i<size;i++)
   {
-    printf("%5s: flag=%d ,FuncSupportLoad=%p\n",funclist[i].regname,funclist[i].regflag,funclist[i].Func);
+    printf("%5s: flag=%d ,Func%dSupportLoad=%p\n",funclist[i].regname,funclist[i].regflag,funclist[i].regflag,funclist[i].Func);
   }
   printf("############ Func List End ############\n");
 }
@@ -104,7 +102,12 @@ int main(int argc,char *argv[]){
 	}
 
 //-------Only Rw-----------------
-  funcstruct funcSet[] = {{ACPI,Func1Example,"acpi",0},{RTC,Func2Example,"rtc",0}};
+  funcstruct funcSet[] = {
+    {ACPI,Func1Example,"acpi",0},
+    {RTC,Func2Example,"rtc",0},
+    {BEEP,Func3Example,"beep",0}
+  
+  };
   //char *regname[]={"acpi","rtc"/*regfunc*/};
   enum regfunc funcselect;
   int size = sizeof(funcSet)/sizeof(funcstruct);
