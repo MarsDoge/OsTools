@@ -10,11 +10,36 @@
 #define GPIO_BASE_ADDR_OFFSET 0x60000
 #define ACPI_BASE_ADDR				0x50000
 #define GPIO_CTL							0x900
+enum regfunc{
+  ACPI,RTC
+};
 
-#define GPIO_ON		1
-#define GPIO_OFF	0
+typedef void (*deffunc)(int fd);
+typedef struct __funcstruct
+{
+  enum regfunc regflag;
+  deffunc Func;
+  char *regname;
+  int setflag;
 
-#define GPIO_TMP	0
+}funcstruct;
+
+void drawfunclist(funcstruct funclist[],int size)
+{
+  int i,j;
+	printf("############ Func Support : ");
+  for(i = 0; i<size;i++)
+  {
+    printf("%s ",funclist[i].regname);
+  }
+  printf("############\n");
+
+  for(i = 0; i<size;i++)
+  {
+    printf("%5s: flag=%d ,FuncSupportLoad=%p\n",funclist[i].regname,funclist[i].regflag,funclist[i].Func);
+  }
+  printf("############ Func List End ############\n");
+}
 void Func1Example(int fd);
 void Func1Example(int fd)
 {
@@ -47,8 +72,11 @@ void Func1Example(int fd)
     }
 		printf("--------------Release mem Map----------------\n");
 }
-typedef void (*deffunc)(int fd);
-deffunc Func1 = Func1Example;
+void Func2Example(int fd)
+{
+		printf("-------------Test 222----------------\n");
+}
+//deffunc Func1 = Func1Example;
 // Tools func
 #define FLAG_IO_R_MASK 0x80
 #define FLAG_IO_W_MASK 0x40
@@ -76,20 +104,25 @@ int main(int argc,char *argv[]){
 	}
 
 //-------Only Rw-----------------
+  funcstruct funcSet[] = {{ACPI,Func1Example,"acpi",0},{RTC,Func2Example,"rtc",0}};
+  //char *regname[]={"acpi","rtc"/*regfunc*/};
+  enum regfunc funcselect;
+  int size = sizeof(funcSet)/sizeof(funcstruct);
+  /*draw Func LIST*/
+  drawfunclist(funcSet,size);
 
 	printf("Please Input Reg Name:  ");
 	char *string = calloc(1,20);
 	scanf("%s",string);
 	//printf("%s \n",string);
-  char *regname[]={"acpi","rtc"/*regfunc*/};
-
-  /* select reg name */
+    /* select reg name */
   int j = 0;
-  for(j = 0;j< (sizeof(regname)/sizeof(char*));j++)
+  for(j = 0;j< (sizeof(funcSet)/sizeof(funcstruct));j++)
   {
-    if(!strcmp(string,regname[j]))
+    if(!strcmp(string,funcSet[j].regname))
     {
-      printf("%s RW_FUNC Support, please enter access ..\n",regname[j]);
+      printf("%s RW_FUNC Support, please enter access ..\n",funcSet[j].regname);
+      funcSet[j].setflag = 1;
       flag |= FLAG_IO_SELECT_MASK;
       break;
     }
@@ -109,17 +142,17 @@ int main(int argc,char *argv[]){
 		exit(1);
 	}
 	else{
-		switch(0x80){
-			case 0x80:
-        Func1(fd);
+    for(j = 0;j<(sizeof(funcSet)/sizeof(funcstruct));j++){
+      if(funcSet[j].setflag == 1)
+      {
+        printf("Find function succeeded :%s...\n",funcSet[j].regname);
+        funcSet[j].Func(fd);
 				break;
-			case GPIO_OFF:
-				//flag = 0;
-			//case GPIO_TMP:
-				//function logical
-			default:
-				printf("####### Not param function ########\n ");
-				break;
+      }
+      if((j == (sizeof(funcSet)/sizeof(funcstruct))) && funcSet[j].setflag != 0)
+      {
+         printf("####### Find function Fail , not such Func !!! ########\n ");
+      }
 		}
 
 		printf("--------------end----------------\n");
