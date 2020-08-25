@@ -1,6 +1,7 @@
 
 #include "def.h"
 #include "acpi.h"
+#include "rtc.h"
 
 DevList *DevListInstance = NULL;
 
@@ -17,15 +18,19 @@ int main(int argc,char *argv[]){
 		printf("can't open file,please use root .\n");
 		exit(1);
 	}
-
   /*connect dev and cmd list*/
   AcpiInitInstance();
-
-  /*Draw Dev and Cmd Tree*/
+printf(" %s %d  \n",__func__,__LINE__);
+  RtcInitInstance();
+printf(" %s %d  \n",__func__,__LINE__);
+  
+	/*Draw Dev and Cmd Tree*/
   DrawDevTree();
+printf(" %s %d  \n",__func__,__LINE__);
 
 	/*Test*/
-	((AcpiRead)(DevListInstance->nextdev->CmdInstance[0].CmdOps))(fd);
+	//((AcpiRead)(DevListInstance->nextdev->CmdInstance[0].CmdOps))(fd);
+	((AcpiRead)(DevListInstance->nextdev->nextdev->CmdInstance[0].CmdOps))(fd);
   //-------Only Rw-----------------
   
     //  printf("%s RW_FUNC Support, please enter access ..\n",funcSet[j].regname);

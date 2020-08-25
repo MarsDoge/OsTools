@@ -9,6 +9,7 @@
  * */
 DevNode *GetDevListTail(void)
 {
+printf(" %s %d  \n",__func__,__LINE__);
   DevNode *TmpNode;
   if (DevListInstance == NULL) {
     printf("DevListInstance is NULL,created! \n");
@@ -24,12 +25,15 @@ DevNode *GetDevListTail(void)
       printf("DevList next no Dev ,is NULL,return DevList!\n");
       return DevListInstance;
     } else {
+printf(" %s %d  \n",__func__,__LINE__);
       TmpNode = DevListInstance->nextdev;
-      while (TmpNode!=NULL)
+printf(" %s %d  \n",__func__,__LINE__);
+      while(TmpNode->nextdev != NULL)
       {
         TmpNode = TmpNode->nextdev;
       }
-      return TmpNode->prevdev;
+printf(" %s %d  \n",__func__,__LINE__);
+      return TmpNode;
     }
   }
 }
@@ -38,13 +42,16 @@ int DevNodeInsert(DevNode *DevNodeInstance)
 {
   DevNode *TailNode;
 
+printf(" %s %d  \n",__func__,__LINE__);
   TailNode = GetDevListTail();
   if(TailNode == NULL)
   {
     printf("Error: Tail is not must NULL!!!!!!\n");
     return 1;
   }
+printf(" %s %d  \n",__func__,__LINE__);
   TailNode->nextdev = DevNodeInstance;
+	DevNodeInstance->prevdev = TailNode;
   printf("Insert Success: DevNodeInstance insert in List.\n");
   return 0;
 }
@@ -52,7 +59,9 @@ int DevNodeInsert(DevNode *DevNodeInstance)
 void DevInstanceInsert(DevNode *DevInstance){
   int status;
 
+printf(" %s %d  \n",__func__,__LINE__);
   status = DevNodeInsert (DevInstance);
+printf(" %s %d  \n",__func__,__LINE__);
   if(status == 1){
     printf("Error:%s Instance Insert Fail!!!\n",DevInstance->devname);
     while(1);
