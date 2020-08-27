@@ -4,7 +4,7 @@
 #define REUSE_BASE_ADDR				0x440
 
 DevNode ConfInstance = {
-    "rtc",
+    "conf",
     NULL,
     LS7A_CONF_BASE_ADDR + REUSE_BASE_ADDR,
     NULL,

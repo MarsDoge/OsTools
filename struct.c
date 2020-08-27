@@ -42,16 +42,16 @@ int DevNodeInsert(DevNode *DevNodeInstance)
 {
   DevNode *TailNode;
 
-printf(" %s %d  \n",__func__,__LINE__);
+  printf(" %s %d  \n",__func__,__LINE__);
   TailNode = GetDevListTail();
   if(TailNode == NULL)
   {
     printf("Error: Tail is not must NULL!!!!!!\n");
     return 1;
   }
-printf(" %s %d  \n",__func__,__LINE__);
+  printf(" %s %d  \n",__func__,__LINE__);
   TailNode->nextdev = DevNodeInstance;
-	DevNodeInstance->prevdev = TailNode;
+  DevNodeInstance->prevdev = TailNode;
   printf("Insert Success: DevNodeInstance insert in List.\n");
   return 0;
 }
@@ -70,30 +70,34 @@ printf(" %s %d  \n",__func__,__LINE__);
 
 DevNode* GetDevNodeInstance(char *devname)
 {
-	DevNode *NodeTmp = NULL;
+  DevNode *NodeTmp = NULL;
 
-	if(DevListInstance == NULL){
+  if(DevListInstance == NULL){
     printf("Error: List is NULL,Not Allocate!!!\n");
-		return NULL;
-	}else{
-		NodeTmp = DevListINstance->nextdev;
-		while(NodeTmp!=NULL)
-		{
-			if(strcmp(NodeTmp->devname,devname)){
-				//printf("Error: Next Node is NULL,please be careful!!!\n");
-				/*match dev success*/
-				return NodeTmp;
-				//break;
-			}else{
-				NodeTmp = NodeTmp->nextdev;
-				continue;
-			}
-		}
-		if(NodeTmp == NULL){
-			printf("Warning: Not dev did not mattch !!!\n");
-			return NULL;
-		}
-	}
+    return NULL;
+  }else{
+    NodeTmp = DevListInstance->nextdev;
+  printf(" %s %d  \n",__func__,__LINE__);
+    while(NodeTmp!=NULL)
+    {
+      if(!strcmp(NodeTmp->devname,devname)){
+  printf(" %s %d  \n",__func__,__LINE__);
+        //printf("Error: Next Node is NULL,please be careful!!!\n");
+        /*match dev success*/
+        return NodeTmp;
+        //break;
+      }else{
+  printf(" %s %d  \n",__func__,__LINE__);
+        NodeTmp = NodeTmp->nextdev;
+        continue;
+      }
+    }
+  printf(" %s %d  \n",__func__,__LINE__);
+    if(NodeTmp == NULL){
+      printf("Warning: Not dev did not mattch !!!\n");
+      return NULL;
+    }
+  }
 }
 
 

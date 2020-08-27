@@ -37,7 +37,7 @@ extern DevList *DevListInstance;
  * */
 DevNode *GetDevListTail(void);
 
-
+DevNode* GetDevNodeInstance(char *devname);
 /*
  * Insert Node Dynamic Data.
  * return 0 is success;

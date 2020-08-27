@@ -22,15 +22,21 @@ int main(int argc,char *argv[]){
   ConfInitInstance();
 printf(" %s %d  \n",__func__,__LINE__);
   GpioInitInstance();
+  RtcInitInstance();
 printf(" %s %d  \n",__func__,__LINE__);
   
 	/*Draw Dev and Cmd Tree*/
   DrawDevTree();
 printf(" %s %d  \n",__func__,__LINE__);
-
+  
+  DevNode* NodeTmp = NULL;
 	/*Test*/
-	((AcpiRead)(DevListInstance->nextdev->CmdInstance[0].CmdOps))(fd);
-	((DualParam)(DevListInstance->nextdev->nextdev->CmdInstance[0].CmdOps))(DevListInstance->nextdev->nextdev,fd);
+	//((AcpiRead)(DevListInstance->nextdev->CmdInstance[0].CmdOps))(fd);
+	//((DualParam)(DevListInstance->nextdev->nextdev->CmdInstance[0].CmdOps))(DevListInstance->nextdev->nextdev,fd);
+  NodeTmp = GetDevNodeInstance("rtc");
+printf(" %s %d  \n",__func__,__LINE__);
+printf(" %s %d %p \n",__func__,__LINE__,NodeTmp);
+  ((DualParam)(NodeTmp->CmdInstance[0].CmdOps))(NodeTmp,fd);
   //-------Only Rw-----------------
   
     //  printf("%s RW_FUNC Support, please enter access ..\n",funcSet[j].regname);
