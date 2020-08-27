@@ -30,7 +30,7 @@ printf(" %s %d  \n",__func__,__LINE__);
 
 	/*Test*/
 	//((AcpiRead)(DevListInstance->nextdev->CmdInstance[0].CmdOps))(fd);
-	((AcpiRead)(DevListInstance->nextdev->nextdev->CmdInstance[0].CmdOps))(fd);
+	((DualParam)(DevListInstance->nextdev->nextdev->CmdInstance[0].CmdOps))(DevListInstance->nextdev->nextdev,fd);
   //-------Only Rw-----------------
   
     //  printf("%s RW_FUNC Support, please enter access ..\n",funcSet[j].regname);

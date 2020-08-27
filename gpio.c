@@ -13,12 +13,12 @@ DevNode GpioInstance = {
 
 
 
-void GpioReadOps(int fd)
+void GpioReadOps(DevNode *this,int fd)
 {
 	void * p = NULL;
   int status ;
-	int memmask = GpioInstance.devaddr & ~(0xfff);
-	int memoffset = GpioInstance.devaddr & (0xfff);
+	int memmask = this->devaddr & ~(0xfff);
+	int memoffset = this->devaddr & (0xfff);
 	/*Transfer mem Addr*/
 printf(" %s %d  ,%x\n",__func__,__LINE__,memmask);
 printf(" %s %d  ,%x\n",__func__,__LINE__,memoffset);

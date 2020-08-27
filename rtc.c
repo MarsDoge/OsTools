@@ -13,12 +13,12 @@ DevNode RtcInstance = {
 
 
 
-void RtcReadOps(int fd)
+void RtcReadOps(DevNode *this,int fd)
 {
 	void * p = NULL;
   int status ;
-	int memmask = RtcInstance.devaddr & ~(0xfff);
-	int memoffset = RtcInstance.devaddr & (0xfff);
+	int memmask = this->devaddr & ~(0xfff);
+	int memoffset = this->devaddr & (0xfff);
 	/*Transfer mem Addr*/
 printf(" %s %d  ,%x\n",__func__,__LINE__,memmask);
 printf(" %s %d  ,%x\n",__func__,__LINE__,memoffset);
