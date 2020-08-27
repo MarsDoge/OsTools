@@ -52,7 +52,7 @@ int DevNodeInsert(DevNode *DevNodeInstance)
   printf(" %s %d  \n",__func__,__LINE__);
   TailNode->nextdev = DevNodeInstance;
   DevNodeInstance->prevdev = TailNode;
-  printf("Insert Success: DevNodeInstance insert in List.\n");
+  printf("Insert Success: Dev/%s insert in List.\n",DevNodeInstance->devname);
   return 0;
 }
 
