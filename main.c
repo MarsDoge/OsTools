@@ -19,9 +19,9 @@ int main(int argc,char *argv[]){
 		exit(1);
 	}
   /*connect dev and cmd list*/
-  AcpiInitInstance();
+  ConfInitInstance();
 printf(" %s %d  \n",__func__,__LINE__);
-  RtcInitInstance();
+  GpioInitInstance();
 printf(" %s %d  \n",__func__,__LINE__);
   
 	/*Draw Dev and Cmd Tree*/
@@ -29,7 +29,7 @@ printf(" %s %d  \n",__func__,__LINE__);
 printf(" %s %d  \n",__func__,__LINE__);
 
 	/*Test*/
-	//((AcpiRead)(DevListInstance->nextdev->CmdInstance[0].CmdOps))(fd);
+	((AcpiRead)(DevListInstance->nextdev->CmdInstance[0].CmdOps))(fd);
 	((DualParam)(DevListInstance->nextdev->nextdev->CmdInstance[0].CmdOps))(DevListInstance->nextdev->nextdev,fd);
   //-------Only Rw-----------------
   

@@ -33,8 +33,8 @@ printf(" %s %d  ,%x\n",__func__,__LINE__,memoffset);
 printf(" %s %d  \n",__func__,__LINE__);
 
 	/*Set Gpio*/
+	*(volatile unsigned int *)(p + 4) = 0x0;
 while(1){
-
 	//start
 	*(volatile unsigned int *)(p + 0x10 + 4) = 0xffffffff;
 	sleep(1);//500ms

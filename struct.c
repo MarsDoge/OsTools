@@ -68,8 +68,34 @@ printf(" %s %d  \n",__func__,__LINE__);
   }
 }
 
+DevNode* GetDevNodeInstance(char *devname)
+{
+	DevNode *NodeTmp = NULL;
 
-   // printf("line:%d, func:%s \n",__LINE__,__func__);
+	if(DevListInstance == NULL){
+    printf("Error: List is NULL,Not Allocate!!!\n");
+		return NULL;
+	}else{
+		NodeTmp = DevListINstance->nextdev;
+		while(NodeTmp!=NULL)
+		{
+			if(strcmp(NodeTmp->devname,devname)){
+				//printf("Error: Next Node is NULL,please be careful!!!\n");
+				/*match dev success*/
+				return NodeTmp;
+				//break;
+			}else{
+				NodeTmp = NodeTmp->nextdev;
+				continue;
+			}
+		}
+		if(NodeTmp == NULL){
+			printf("Warning: Not dev did not mattch !!!\n");
+			return NULL;
+		}
+	}
+}
+
 
 void DrawDevTree(void)
 {
