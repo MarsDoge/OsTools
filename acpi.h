@@ -1,5 +1,5 @@
-#ifndef __RTC_H_
-#define __RTC_H_
+#ifndef __ACPI_H_
+#define __ACPI_H_
 
 #include "def.h"
 

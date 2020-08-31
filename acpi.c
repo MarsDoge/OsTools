@@ -13,12 +13,15 @@ DevNode AcpiInstance = {
 
 
 
-void AcpiReadOps(int fd)
+void AcpiReadOps(DevNode *this,int fd)
 {
 	char * p = NULL;
   int status ;
-
-	p = (char*)mmap(NULL,4096, PROT_READ|PROT_WRITE,MAP_SHARED,fd,AcpiInstance.devaddr);
+	int memmask = this->devaddr & ~(0xfff);
+	int memoffset = this->devaddr & (0xfff);
+	/*Transfer mem Addr*/
+	p = (void*)mmap(NULL,1, PROT_READ|PROT_WRITE,MAP_SHARED,fd,memmask);
+	p = p + memoffset;
 	printf("mmap addr start : %p \n",p);
 	/*Debug ACPI*/
 	int i = 0;

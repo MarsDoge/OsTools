@@ -7,11 +7,10 @@
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <string.h>
-
+#include "debug.h"
 
 #define LS7A_CONF_BASE_ADDR   0x10010000
 #define LS7A_MISC_BASE_ADDR   0x10080000
-typedef void (*AcpiRead)(int fd);
 
 typedef struct __Cmd{
   char *CmdName;
@@ -27,7 +26,9 @@ typedef struct __DevNode{
 }DevNode;
 #define DevList DevNode
 
+typedef void (*SingParam)(int fd);
 typedef void (*DualParam)(DevNode *this,int fd);
+
 extern DevList *DevListInstance;
 
 /*  return devtail
@@ -37,7 +38,7 @@ extern DevList *DevListInstance;
  * */
 DevNode *GetDevListTail(void);
 
-DevNode* GetDevNodeInstance(char *devname);
+DevNode* GetDevNodeInstance(const char *devname,size_t cmpsize);
 /*
  * Insert Node Dynamic Data.
  * return 0 is success;
