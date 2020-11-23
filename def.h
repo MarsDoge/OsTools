@@ -46,4 +46,8 @@ int DevNodeInsert(DevNode *DevNodeInstance);
 
 
 void DrawDevTree(void);
+
+
+/*Func Use*/
+void *vtpa(unsigned long long vaddr,int fd);
 #endif

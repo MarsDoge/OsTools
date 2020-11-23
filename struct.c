@@ -70,10 +70,9 @@ DevNode* GetDevNodeInstance(const char *devname,size_t cmpsize)
     while(NodeTmp!=NULL)
     {
       if(!strncmp(NodeTmp->devname,devname,cmpsize)){
-        //printfQ("Error: Next Node is NULL,please be careful!!!\n");
+        printf("Error: Next Node is NULL,please be careful!!!\n");
         /*match dev success*/
         return NodeTmp;
-        //break;
       }else{
         NodeTmp = NodeTmp->nextdev;
         continue;
@@ -86,39 +85,7 @@ DevNode* GetDevNodeInstance(const char *devname,size_t cmpsize)
     }
   }
 }
-#if 0
-char* GetNextDevName(DevNode* LocalNode)
-{
-  DevNode *NodeTmp = NULL;
 
-  if(DevListInstance == NULL){
-    printfQ("Error: List is NULL,Not Allocate!!!\n");
-    return NULL;
-  }else{
-    NodeTmp = DevListInstance->nextdev;
-    while(NodeTmp!=NULL)
-    {
-      if(!strcmp(NodeTmp->devname,devname)){
-  printfQ(" %s %d  \n",__func__,__LINE__);
-        //printfQ("Error: Next Node is NULL,please be careful!!!\n");
-        /*match dev success*/
-        return NodeTmp;
-        //break;
-      }else{
-  printfQ(" %s %d  \n",__func__,__LINE__);
-        NodeTmp = NodeTmp->nextdev;
-        continue;
-      }
-    }
-    if(NodeTmp == NULL){
-      printfQ("Warning: Not dev did not mattch,please,\
-          Please confirm whether to insert the required node!!!\n");
-      return NULL;
-    }
-  }
-
-}
-#endif
 void DrawDevTree(void)
 {
   int TreeNum = 0;

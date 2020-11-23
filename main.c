@@ -19,6 +19,7 @@ int main(int argc,char *argv[]){
 		printfQ("can't open file,please use root .\n");
 		exit(1);
 	}
+
   /*connect dev and cmd list*/
   ConfInitInstance();
   GpioInitInstance();
