@@ -1,7 +1,5 @@
 #include "def.h"
 
-
-
 /*  return devtail
  *  //if return is NULL, no dev in DevList.
  *  if return is not NULL, and if return.name is NULL,this list is no create.
@@ -9,7 +7,6 @@
  * */
 DevNode *GetDevListTail(void)
 {
-printfQ(" %s %d  \n",__func__,__LINE__);
   DevNode *TmpNode;
   if (DevListInstance == NULL) {
     printf("DevListInstance is NULL,created! \n");
@@ -25,14 +22,11 @@ printfQ(" %s %d  \n",__func__,__LINE__);
       printf("DevList next no Dev ,is NULL,return DevList!\n");
       return DevListInstance;
     } else {
-printfQ(" %s %d  \n",__func__,__LINE__);
       TmpNode = DevListInstance->nextdev;
-printfQ(" %s %d  \n",__func__,__LINE__);
       while(TmpNode->nextdev != NULL)
       {
         TmpNode = TmpNode->nextdev;
       }
-printfQ(" %s %d  \n",__func__,__LINE__);
       return TmpNode;
     }
   }
@@ -42,14 +36,12 @@ int DevNodeInsert(DevNode *DevNodeInstance)
 {
   DevNode *TailNode;
 
-  printfQ(" %s %d  \n",__func__,__LINE__);
   TailNode = GetDevListTail();
   if(TailNode == NULL)
   {
-    printfQ("Error: Tail is not must NULL!!!!!!\n");
+    printf("Error: Tail is not must NULL!!!!!!\n");
     return 1;
   }
-  printfQ(" %s %d  \n",__func__,__LINE__);
   TailNode->nextdev = DevNodeInstance;
   DevNodeInstance->prevdev = TailNode;
   printf("Insert Success: Dev/%s insert in List.\n",DevNodeInstance->devname);
@@ -59,9 +51,7 @@ int DevNodeInsert(DevNode *DevNodeInstance)
 void DevInstanceInsert(DevNode *DevInstance){
   int status;
 
-printfQ(" %s %d  \n",__func__,__LINE__);
   status = DevNodeInsert (DevInstance);
-printfQ(" %s %d  \n",__func__,__LINE__);
   if(status == 1){
     printf("Error:%s Instance Insert Fail!!!\n",DevInstance->devname);
     while(1);
@@ -77,22 +67,18 @@ DevNode* GetDevNodeInstance(const char *devname,size_t cmpsize)
     return NULL;
   }else{
     NodeTmp = DevListInstance->nextdev;
-  printfQ(" %s %d  \n",__func__,__LINE__);
     while(NodeTmp!=NULL)
     {
       if(!strncmp(NodeTmp->devname,devname,cmpsize)){
-  printfQ(" %s %d  \n",__func__,__LINE__);
         //printfQ("Error: Next Node is NULL,please be careful!!!\n");
         /*match dev success*/
         return NodeTmp;
         //break;
       }else{
-  printfQ(" %s %d  \n",__func__,__LINE__);
         NodeTmp = NodeTmp->nextdev;
         continue;
       }
     }
-  printfQ(" %s %d  \n",__func__,__LINE__);
     if(NodeTmp == NULL){
       printf("Warning: Not dev did not mattch,please,\
           Please confirm whether to insert the required node!!!\n");

@@ -8,6 +8,7 @@ DevList *DevListInstance = NULL;
 
 int main(int argc,char *argv[]){
 	int tmp = 0,flag = 0,status = 0;
+  unsigned char index;
 	if(argc!=1){
 		printfQ("Access Func Fail, please get help !!! \n");
 		return;
@@ -46,36 +47,20 @@ int main(int argc,char *argv[]){
   fclose(pfile);
 
   NodeTmp = GetDevNodeInstance(RecordName,RecordSize);
-  ((DualParam)(NodeTmp->CmdInstance[0].CmdOps))(NodeTmp,fd);
+  /*Get Cmd Num*/
+  index = 0;
+  while((Cmd*)(NodeTmp->CmdInstance + index)->CmdName != NULL)
+  {
+    printf("%d : %s \n",index,(Cmd*)(NodeTmp->CmdInstance + index)->CmdName);
+    index++;
+  }
+
+  printf("Please Input Ops Num...\n");
+  status = scanf("%s",RecordName);
+  index = atoi(RecordName);
+  ((DualParam)(NodeTmp->CmdInstance[index].CmdOps))(NodeTmp,fd);
 
 
-
-
-  //-------Only Rw-----------------
-
-    //  printfQ("%s RW_FUNC Support, please enter access ..\n",funcSet[j].regname);
-		//printfQ("Function not currently supported, Please contact the developer !!!\n");
-	
-#if 0
-	else{
-    for(j = 0;j<(sizeof(funcSet)/sizeof(funcstruct));j++){
-      if(funcSet[j].setflag == 1)
-      {
-        printfQ("Find function succeeded :%s...\n",funcSet[j].regname);
-        funcSet[j].Func(fd);
-				break;
-      }
-      if((j == (sizeof(funcSet)/sizeof(funcstruct))) && funcSet[j].setflag != 0)
-      {
-         printfQ("####### Find function Fail , not such Func !!! ########\n ");
-      }
-		}
-
-		printfQ("--------------end----------------\n");
-	}
-
-	return 0;
-#endif
-	close(fd);
+  close(fd);
 }
 

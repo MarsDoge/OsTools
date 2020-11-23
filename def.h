@@ -26,7 +26,6 @@ typedef struct __DevNode{
 }DevNode;
 #define DevList DevNode
 
-typedef void (*SingParam)(int fd);
 typedef void (*DualParam)(DevNode *this,int fd);
 
 extern DevList *DevListInstance;
