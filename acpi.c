@@ -59,9 +59,10 @@ void AcpiReboot(DevNode *this,int fd)
   status = releaseMem(p);
 }
 
-Cmd AcpiCmd[2] = {
+Cmd AcpiCmd[3] = {
   {"-r",AcpiReadOps},
-  {"-b",AcpiReboot}
+  {"-b",AcpiReboot},
+  {NULL,NULL} //Leave blank address
 };
 
 void AcpiInitInstance(void)

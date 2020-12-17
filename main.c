@@ -24,6 +24,7 @@ int main(int argc,char *argv[]){
   GpioInitInstance();
   RtcInitInstance();
   AcpiInitInstance();
+  SpiInitInstance();
 
 	/*Draw Dev and Cmd Tree*/
   DrawDevTree();
@@ -40,6 +41,7 @@ int main(int argc,char *argv[]){
 		printf("DevName is too long,please confirm!!! .\n");
     return 1;
   }
+
   /*Save Input History Record*/
   FILE *pfile = fopen("./.ToolSetRecord.txt", "a+");
   RecordName[9] = '\n';
