@@ -47,10 +47,21 @@ void AcpiReadOps(DevNode *this,int fd)
     }
 		printf("--------------Release mem Map----------------\n");
 }
+#define writeb(addr,val)  (*(volatile unsigned char *)(addr)) = val
+void AcpiReboot(DevNode *this,int fd)
+{
+  char * p = NULL;
+  int status ;
+  p = vtpa(this->devaddr,fd);
+
+  writeb (p + 0x30, 0x1);
+
+  status = releaseMem(p);
+}
 
 Cmd AcpiCmd[2] = {
   {"-r",AcpiReadOps},
-  {NULL,NULL}
+  {"-b",AcpiReboot}
 };
 
 void AcpiInitInstance(void)

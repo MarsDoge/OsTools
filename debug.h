@@ -6,7 +6,7 @@
 //#define RELEASE
 
 #ifdef  RELEASE
-  #define printfQ(x)
+  #define printfQ(format,...)
 #else
   #define printfQ(format,...) printf(format, ##__VA_ARGS__)
 #endif
