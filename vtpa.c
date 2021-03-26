@@ -7,7 +7,7 @@
 #include <string.h>
 #include "debug.h"
 
-int memmask;
+unsigned long long memmask;
 int memoffset;
 void *vtpa(unsigned long long vaddr,int fd)
 {

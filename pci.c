@@ -19,21 +19,19 @@ void PciReadOps(DevNode *this, int fd)
   int status ;
   char RecordName[30] = {0};
   int c = 0;
+  char str[30] = {0};
 
   p = vtpa(this->devaddr,fd);
 
-	printf("Read Pci Bar Mem Start, Please Input Address offset composed of Bus,dev,func!" );
-  status = scanf("%s",RecordName);
-  c = atoi(RecordName);
+	printf("Read Pci Bar Mem Start, Please Input Address offset composed of Bus,dev,func: " );
+  status = scanf("%s",str);
+  //c = atoi(RecordName);
+  int a = 0;
+  sscanf (str,"%x",&a);
+  printf("your input Pci Offset 0x%lx \n",a);
   
-	printf(" Auto Read Pci(Bus:%lx:%lx:%lx) 0x10 Bar Mem Start, %lx \n",(c>>16),((c>>11)&0x1f),((c>>8)&7), *(volatile unsigned int *)(p + c + 0x10));
+	printf(" Auto Read Pci(Bus:%d:%d:%d) 0x10 Bar Mem Start, %lx \n",(a>>16),((a>>11)&0x1f),((a>>8)&7), *(volatile unsigned int *)(p + a + 0x10));
   //lack auto know device name array
-
-		status = munmap(p-memoffset, 1);
-    if(status == -1){
-		  printf("----------  Release mem Map Error !!! ------\n");
-    }
-		printf("--------------Release mem Map----------------\n");
 }
 
 Cmd PciCmd[2] = {
@@ -43,6 +41,6 @@ Cmd PciCmd[2] = {
 
 void PciInitInstance(void)
 {
-   PciInstance.PciInstance = PciCmd;
+   PciInstance.CmdInstance = PciCmd;
    DevInstanceInsert(&PciInstance);
 }

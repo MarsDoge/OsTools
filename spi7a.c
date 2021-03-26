@@ -4,7 +4,7 @@
 
 #define  SPI_ADDR  0 //0x5d6a8000ULL  Need Get,because is Pci's Bar, Address is dynamic// 0x5d6aa004 + MemSpace 0x0000
 
-DevNode SpiInstance = {
+DevNode Spi7aInstance = {
     "spi7a",
     NULL,
     SPI_ADDR,
@@ -156,11 +156,9 @@ SpiFlashInit (
   VOID
   )
 {
-  printf("------------a-----------\n");
   if (ValueRegSpcr == 0xFF) {
     ValueRegSpcr = REGGET(REG_SPCR);
   }
-  printf("------------b-----------\n");
   if (ValueRegSpsr == 0xFF) {
     ValueRegSpsr = REGGET(REG_SPSR);
   }
@@ -553,9 +551,7 @@ SpiFlashRead (
     while(1);
   }
 
-  printf("------------s-----------\n");
   SpiFlashInit ();
-  printf("------------0-----------\n");
   Ret = SpiFlashSpiReadBuffer (Offset, Buffer, Num);
   SpiFlashReset ();
   ResetSfcParamReg();
@@ -625,7 +621,6 @@ SpiFlashSafeWrite (
   UINTN        Num
   )
 {
-  printf("------------11-----------\n");
   UINT64 SectorStart;
   UINT64 SectorNum;
   UINT8  *Buff;
@@ -637,7 +632,6 @@ SpiFlashSafeWrite (
 
   SectorStart = Offset / BLKSIZE;
   SectorNum   = ((Offset + Num - 1) / BLKSIZE) - (Offset / BLKSIZE) + 1;
-  printf("------------2-----------\n");
 
   Buff = malloc(SectorNum*BLKSIZE);
 
@@ -645,20 +639,15 @@ SpiFlashSafeWrite (
     //ASSERT(0);
     while(1);
   }
-  printf("------------3-----------\n");
 
   SpiFlashRead(SectorStart*BLKSIZE,Buff,SectorNum*BLKSIZE);
-  printf("------------8-----------\n");
   memcpy(&Buff[Offset%BLKSIZE],Buffer,Num);
-  printf("------------7-----------\n");
   SpiFlashErase(Offset,Num);
-  printf("------------6-----------\n");
   SpiFlashWrite(SectorStart*BLKSIZE,Buff,SectorNum*BLKSIZE);
-  printf("------------5-----------\n");
   free(Buff);
-  printf("------------4-----------\n");
 }
 
+void* parse_mac(char *szMacStr);
 void GmacUpdateOps(DevNode *this,int fd)
 {
 	void * p = NULL;
@@ -668,11 +657,12 @@ void GmacUpdateOps(DevNode *this,int fd)
   unsigned int sper = 0;
   unsigned int param = 0;
   int c = 0;
-  char RecordName[30];
+  char RecordName[100];
 
   printf("Please Input Pci's Spi Control Address (obtained through Pci Access): ");
   status = scanf("%s",RecordName);
-  c = atoi(RecordName);
+  sscanf (RecordName,"%x",&c);
+  //c = atoi(RecordName);
 
   //write spi control Address
   this->devaddr = c;
@@ -682,66 +672,49 @@ void GmacUpdateOps(DevNode *this,int fd)
   SPI_REG_BASE = (UINTN)p & 0xfffffffffffffff0ULL;
 
   //void *buf = malloc(1024*1024*4);
+    unsigned char *buf3 = NULL;
 
-  char RecordName[30] = {0};
+  //char RecordName[30] = {0};
+  int q = 0;
+  for(q = 0; q<29; q++){
+    RecordName[q] = 0;
+  }
   printf("Please Input Gmac id: ");
 
   char buf[6][20] = {0};
+    unsigned char bufint[7] = {0};
 
+    int j = 0;
+    int k = 0;
+    int i = 0;
   //GmacUpdateOps
-  unsigned c = 0;
+  c = 0;
   status = scanf("%s",RecordName);
   c = atoi(RecordName);
   printf("\n");
   if (c == 0){
-    printf("Example Mac burn addr: 0x11:0x22:0x33:0x44:0x55:0x66 !!!\n");
+    printf("Example Mac burn addr: 11:22:33:44:55:66 !!!\n");
     printf("Please Input Mac%d burn addr,Use (:) separate:",c);
     status = scanf("%s",RecordName);
     
-    for(int i = 0,j = 0,k = 0; i < 10; i++)
-    {
-      if (RecordName[i] != ':')
-          continue;
-      memcpy(buf[i],RecordName + k, i-k);
-      J++;
-      k = i+1;
-    }
-
-    int bufint[6] = 0;
-      printf("Mac input Value : ");
-    fot (i=0,i<5,i++) {
-      bufint[i] = atoi(buf[i]);
-      printf("%lx",bufint[i]);
-    }
-      printf("\n");
+    //parse mac string
+    buf3 = parse_mac(RecordName);
+    memcpy(bufint,buf3,6);
 
     SpiFlashSafeWrite(0,bufint,6);
   } else if (c == 1){
-    printf("Example Mac burn addr: 0x11:0x22:0x33:0x44:0x55:0x66 !!!\n");
+    printf("Example Mac burn addr: 11:22:33:44:55:66 !!!\n");
     printf("Please Input Mac%d burn addr,Use (:) separate:",c);
     status = scanf("%s",RecordName);
     
-    for(i = 0,j = 0,k = 0; i < 10; i++)
-    {
-      if (RecordName[i] != ':')
-          continue;
-      memcpy(buf[i],RecordName + k, i-k);
-      J++;
-      k = i+1;
-    }
-
-      bufint[6] = 0;
-      printf("Mac input Value : ");
-    fot (i=0,i<5,i++) {
-      bufint[i] = atoi(buf[i]);
-      printf("%lx",bufint[i]);
-    }
-      printf("\n");
-
+    //parse mac string
+    buf3 = parse_mac(RecordName);
+    memcpy(bufint,buf3,6);
+    
     SpiFlashSafeWrite(0x10,bufint,6);
   } else {
   printf("------------ID Error!!!-----------\n");
-  return 1;
+  return ;
   }
   printf("------------ok mac-----------\n");
  // char buf1[3] = {0x11,0x22,0x33};

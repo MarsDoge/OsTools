@@ -1,5 +1,5 @@
 #include "spi.h"
-
+#if 0
 #define readw(addr)  (*(volatile unsigned int *)(addr))
 
 #define  SPI_ADDR 0x1fe001f0
@@ -696,3 +696,4 @@ void SpiInitInstance(void)
    SpiInstance.CmdInstance = SpiCmd;
    DevInstanceInsert(&SpiInstance);
 }
+#endif
