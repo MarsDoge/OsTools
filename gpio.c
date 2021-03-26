@@ -6,12 +6,15 @@
 DevNode GpioInstance = {
     "gpio",
     NULL,
-    LS7A_MISC_BASE_ADDR + GPIO_BASE_ADDR,
+    LS7A_MISC_BASE_ADDR + GPIO_BASE_ADDR + 0x900,
     NULL,
     NULL
 };
 
-
+void delay (unsigned long a)
+{
+    while(a--);
+}
 
 void GpioReadOps(DevNode *this,int fd)
 {
@@ -34,25 +37,17 @@ printf(" %s %d  \n",__func__,__LINE__);
 
 	/*Set Gpio*/
 	*(volatile unsigned int *)(p + 4) = 0x0;
+  int a = 0x1000;
 while(1){
 	//start
-	*(volatile unsigned int *)(p + 0x10 + 4) = 0xffffffff;
-	sleep(1);//500ms
-	//getchar();
-	*(volatile unsigned int *)(p + 0x10 + 4) = 0x0;
-	sleep(1);//500ms
-	//getchar();
-	*(volatile unsigned int *)(p + 0x10 + 4) = 0xffffffff;
-	//*(volatile unsigned int *)(p + 0x10 + 4) = 0x0;
-	//sleep(5);
-	//getchar();
-	sleep(100);
-	*(volatile unsigned int *)(p + 0x10 + 4) = 0x0;
-	sleep(5);
-	//restore High
-	*(volatile unsigned int *)(p + 0x10 + 4) |= 0xffffffff;
-	printf(" cycle : %d \n",++i);
-	//sleep(6);
+  a = 0x1000;
+  while(a--){
+	*(volatile unsigned int *)(p ) = 0xffffff;
+  delay(0x20000);
+	*(volatile unsigned int *)(p ) = 0x0;
+  delay(0x20000);
+	}
+  sleep(1);
 }
 //printf(" %s %d gpio:%x \n",__func__,__LINE__,tmp_tmp);
 	printf("---------------GPio Set %s %d  \n",__func__,__LINE__);

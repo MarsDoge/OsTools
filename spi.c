@@ -663,6 +663,7 @@ void SpiUpdateOps(DevNode *this,int fd)
   void *buf = malloc(1024*1024*4);
 
   printf("Please Input File Name: ");
+  //char RecordName[30] = "LS3A50007A.fd";
   char RecordName[30] = {0};
   status = scanf("%s",RecordName);
   size_t RecordSize = strlen(RecordName);
