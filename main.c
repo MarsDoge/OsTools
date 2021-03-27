@@ -24,7 +24,9 @@ int main(int argc,char *argv[]){
   GpioInitInstance();
   RtcInitInstance();
   AcpiInitInstance();
-  SpiInitInstance();
+ // SpiInitInstance();
+  PciInitInstance();
+  Spi7aInitInstance();
 
 	/*Draw Dev and Cmd Tree*/
   DrawDevTree();
