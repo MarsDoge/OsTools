@@ -135,7 +135,6 @@ void* parse_mac(char *szMacStr)
 		printf("%x",*(aucResMac+i));
 	}
 	printf("\n");
-  printf("------------3-----------\n");
 	return aucResMac;
 }
 

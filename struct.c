@@ -69,8 +69,9 @@ DevNode* GetDevNodeInstance(const char *devname,size_t cmpsize)
     NodeTmp = DevListInstance->nextdev;
     while(NodeTmp!=NULL)
     {
-      if(!strncmp(NodeTmp->devname,devname,cmpsize)){
-        printf("Error: Next Node is NULL,please be careful!!!\n");
+      //if(!strncmp(NodeTmp->devname,devname,cmpsize)){
+      if(!strcmp(NodeTmp->devname,devname)){
+        printf("Warning: Next Node is NULL,please be careful!!!\n");
         /*match dev success*/
         return NodeTmp;
       }else{
