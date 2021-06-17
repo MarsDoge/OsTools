@@ -1,8 +1,9 @@
 #include "spi.h"
-#if 0
+
 #define readw(addr)  (*(volatile unsigned int *)(addr))
 
-#define  SPI_ADDR 0x1fe001f0
+//#define  SPI_ADDR 0x1fe001f0
+#define  SPI_ADDR  0  //Get at runtime
 
 DevNode SpiInstance = {
     "spi",
@@ -450,6 +451,7 @@ SpiFlashEraseAndWriteBlocks (
   do {
     if ((Pos % (4 * BLKSIZE)) == 0) {
       printf("*");
+      fflush(stdout);
     }
     Addr0 =  Pos & 0xff;
     Addr1 =  (Pos >> 8) & 0xff;
@@ -468,6 +470,7 @@ SpiFlashEraseAndWriteBlocks (
   while (Index < Num) {
     if ((Index % 0x4000) == 0) {
       printf("*");
+      fflush(stdout);
     }
     Addr0 = (Pos + Index) & 0xff;
     Addr1 = ((Pos + Index) >> 8) & 0xff;
@@ -647,7 +650,7 @@ SpiFlashSafeWrite (
   free(Buff);
 }
 
-void SpiUpdateOps(DevNode *this,int fd)
+void FlashUpdateOps(DevNode *this,int fd)
 {
 	void * p = NULL;
   int status ;
@@ -655,6 +658,8 @@ void SpiUpdateOps(DevNode *this,int fd)
   unsigned int spsr = 0;
   unsigned int sper = 0;
   unsigned int param = 0;
+
+  this->devaddr = 0x1fe001f0;
 
   /*Transfer Virtul to Phy Addr*/
   p = vtpa(this->devaddr,fd);
@@ -685,9 +690,87 @@ void SpiUpdateOps(DevNode *this,int fd)
 	status = releaseMem(p);
 }
 
+void* parse_mac(char *szMacStr);
+void GmacUpdateOps(DevNode *this,int fd)
+{
+	void * p = NULL;
+  int status ;
+  unsigned int spcr = 0;
+  unsigned int spsr = 0;
+  unsigned int sper = 0;
+  unsigned int param = 0;
+  int c = 0;
+  char RecordName[100];
 
-Cmd SpiCmd[2] = {
-  {"-u",SpiUpdateOps},
+  printf("Please Input Pci's Spi Control Address (obtained through Pci Access): ");
+  status = scanf("%s",RecordName);
+  sscanf (RecordName,"%x",&c);
+  //c = atoi(RecordName);
+
+  //write spi control Address
+  this->devaddr = c;
+
+  /*Transfer Virtul to Phy Addr*/
+  p = vtpa(this->devaddr,fd);
+  SPI_REG_BASE = (UINTN)p & 0xfffffffffffffff0ULL;
+
+  //void *buf = malloc(1024*1024*4);
+    unsigned char *buf3 = NULL;
+
+  //char RecordName[30] = {0};
+  int q = 0;
+  for(q = 0; q<29; q++){
+    RecordName[q] = 0;
+  }
+  printf("Please Input Gmac id: ");
+
+  char buf[6][20] = {0};
+    unsigned char bufint[7] = {0};
+
+    int j = 0;
+    int k = 0;
+    int i = 0;
+  //GmacUpdateOps
+  c = 0;
+  status = scanf("%s",RecordName);
+  c = atoi(RecordName);
+  printf("\n");
+  if (c == 0){
+    printf("Example Mac burn addr: 11:22:33:44:55:66 !!!\n");
+    printf("Please Input Mac%d burn addr,Use (:) separate:",c);
+    status = scanf("%s",RecordName);
+    
+    //parse mac string
+    buf3 = parse_mac(RecordName);
+    memcpy(bufint,buf3,6);
+
+    SpiFlashSafeWrite(0,bufint,6);
+  } else if (c == 1){
+    printf("Example Mac burn addr: 11:22:33:44:55:66 !!!\n");
+    printf("Please Input Mac%d burn addr,Use (:) separate:",c);
+    status = scanf("%s",RecordName);
+    
+    //parse mac string
+    buf3 = parse_mac(RecordName);
+    memcpy(bufint,buf3,6);
+    
+    SpiFlashSafeWrite(0x10,bufint,6);
+  } else {
+  printf("------------ID Error!!!-----------\n");
+  return ;
+  }
+  printf("------------ok mac-----------\n");
+ // char buf1[3] = {0x11,0x22,0x33};
+ // UpdateBiosInSpiFlash(0,buf1,2);
+
+	status = releaseMem(p);
+}
+
+
+
+Cmd SpiCmd[3] = {
+  {"-u",FlashUpdateOps},
+  {"-g",GmacUpdateOps},
   {NULL,NULL}
 };
 
@@ -696,4 +779,4 @@ void SpiInitInstance(void)
    SpiInstance.CmdInstance = SpiCmd;
    DevInstanceInsert(&SpiInstance);
 }
-#endif
+
