@@ -26,6 +26,7 @@ int main(int argc,char *argv[]){
   AcpiInitInstance();
   SpiInitInstance();
   PciInitInstance();
+  I2cInitInstance();
 
 	/*Draw Dev and Cmd Tree*/
   DrawDevTree();
