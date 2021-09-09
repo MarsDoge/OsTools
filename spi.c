@@ -699,12 +699,12 @@ void GmacUpdateOps(DevNode *this,int fd)
   unsigned int spsr = 0;
   unsigned int sper = 0;
   unsigned int param = 0;
-  int c = 0;
+  unsigned long long c = 0;
   char RecordName[100];
 
   printf("Please Input Pci's Spi Control Address (obtained through Pci Access): ");
   status = scanf("%s",RecordName);
-  sscanf (RecordName,"%x",&c);
+  sscanf (RecordName,"%lx",&c);
   //c = atoi(RecordName);
 
   //write spi control Address
