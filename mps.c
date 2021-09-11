@@ -87,6 +87,77 @@ void I2cReadOps(DevNode *this, int fd)
 
   sleep (3);
 
+//  for (NodeId = 0; NodeId < NodeNum; NodeId += 4) {
+//	I2cRegBaseAddr = CPU_I2C1_REG_BASE | (NodeId << 44);
+	I2cRegBaseAddr = p;
+	I2cInitSetFreq (I2cRegBaseAddr, 100000, 42, 0x3a); //Lock Freq
+
+	Val16 = 0x0; //a2
+	//I2cCtlWriteNostop (I2cRegBaseAddr, MPS_ADDR, 0x1 << 16, 0x1, &Val16);
+	//I2cCtlWrite (I2cRegBaseAddr, MPS_ADDR, 0x1 << 16, 0x1, &Val16);
+	I2cCtlWrite (I2cRegBaseAddr, MPS_ADDR, 0, 0x1, &Val16);
+
+	//Val16 = Vddp;
+  //Vddn IOUT
+	I2cCtlRead (I2cRegBaseAddr, MPS_ADDR, 0x96, 0x2, &Val16);
+  printf ("qdy %s line:%d Vddn Power:%d \n", __func__,__LINE__,Val16);
+
+	Val16 = 0x0; //a2
+	//I2cCtlWriteNostop (I2cRegBaseAddr, MPS_ADDR, 0x1 << 16, 0x1, &Val16);
+	I2cCtlWrite (I2cRegBaseAddr, MPS_ADDR, 0x0, 0x1, &Val16);
+	//I2cCtlWrite (I2cRegBaseAddr, MPS_ADDR, 0x0, 0x1, &Val16);
+  //}
+
+  sleep (3);
+
+  /*Vp sensed*/
+  //for (NodeId = 0; NodeId < NodeNum; NodeId += 4) {
+	//I2cRegBaseAddr = CPU_I2C1_REG_BASE | (NodeId << 44);
+	I2cRegBaseAddr = p;
+	I2cInitSetFreq (I2cRegBaseAddr, I2C_CTL_CLK, I2C_BUS_RATE, ALGORITHM_3A); //Lock Freq
+
+	Val16 = 0x1; //a2
+	//I2cCtlWriteNostop (I2cRegBaseAddr, MPS_ADDR, 0x1 << 16, 0x1, &Val16);
+	//I2cCtlWrite (I2cRegBaseAddr, MPS_ADDR, 0x1 << 16, 0x1, &Val16);
+	I2cCtlWrite (I2cRegBaseAddr, MPS_ADDR, 0, 0x1, &Val16);
+
+	//Val16 = Vddp;
+  //Vddn IOUT
+	I2cCtlRead (I2cRegBaseAddr, MPS_ADDR, 0x8c, 0x2, &Val16);
+  printf ("qdy %s line:%d    Vddp IOUT %d\n", __func__,__LINE__,Val16);
+
+	Val16 = 0x0; //a2
+	//I2cCtlWriteNostop (I2cRegBaseAddr, MPS_ADDR, 0x1 << 16, 0x1, &Val16);
+	I2cCtlWrite (I2cRegBaseAddr, MPS_ADDR, 0x0, 0x1, &Val16);
+	//I2cCtlWrite (I2cRegBaseAddr, MPS_ADDR, 0x0, 0x1, &Val16);
+  //}
+
+  sleep (3);
+
+  /*Vp sensed*/
+  //for (NodeId = 0; NodeId < NodeNum; NodeId += 4) {
+	//I2cRegBaseAddr = CPU_I2C1_REG_BASE | (NodeId << 44);
+	I2cRegBaseAddr = p;
+	I2cInitSetFreq (I2cRegBaseAddr, I2C_CTL_CLK, I2C_BUS_RATE, ALGORITHM_3A); //Lock Freq
+
+	Val16 = 0x1; //a2
+	//I2cCtlWriteNostop (I2cRegBaseAddr, MPS_ADDR, 0x1 << 16, 0x1, &Val16);
+	//I2cCtlWrite (I2cRegBaseAddr, MPS_ADDR, 0x1 << 16, 0x1, &Val16);
+	I2cCtlWrite (I2cRegBaseAddr, MPS_ADDR, 0, 0x1, &Val16);
+
+	//Val16 = Vddp;
+  //Vddn IOUT
+	I2cCtlRead (I2cRegBaseAddr, MPS_ADDR, 0x96, 0x2, &Val16);
+  printf ("qdy %s line:%d    Vddp Power %d\n", __func__,__LINE__,Val16);
+
+	Val16 = 0x0; //a2
+	//I2cCtlWriteNostop (I2cRegBaseAddr, MPS_ADDR, 0x1 << 16, 0x1, &Val16);
+	I2cCtlWrite (I2cRegBaseAddr, MPS_ADDR, 0x0, 0x1, &Val16);
+	//I2cCtlWrite (I2cRegBaseAddr, MPS_ADDR, 0x0, 0x1, &Val16);
+  //}
+
+  sleep (3);
+
   /*PIN Power*/
   //for (NodeId = 0; NodeId < NodeNum; NodeId += 4) {
 	//I2cRegBaseAddr = CPU_I2C1_REG_BASE | (NodeId << 44);
@@ -110,27 +181,7 @@ void I2cReadOps(DevNode *this, int fd)
   //}
 
   sleep (3);
-  /*Vp sensed*/
-  //for (NodeId = 0; NodeId < NodeNum; NodeId += 4) {
-	//I2cRegBaseAddr = CPU_I2C1_REG_BASE | (NodeId << 44);
-	I2cRegBaseAddr = p;
-	I2cInitSetFreq (I2cRegBaseAddr, I2C_CTL_CLK, I2C_BUS_RATE, ALGORITHM_3A); //Lock Freq
 
-	Val16 = 0x1; //a2
-	//I2cCtlWriteNostop (I2cRegBaseAddr, MPS_ADDR, 0x1 << 16, 0x1, &Val16);
-	//I2cCtlWrite (I2cRegBaseAddr, MPS_ADDR, 0x1 << 16, 0x1, &Val16);
-	I2cCtlWrite (I2cRegBaseAddr, MPS_ADDR, 0, 0x1, &Val16);
-
-	//Val16 = Vddp;
-  //Vddn IOUT
-	I2cCtlRead (I2cRegBaseAddr, MPS_ADDR, 0x8c, 0x2, &Val16);
-  printf ("qdy %s line:%d    Vddp IOUT %d\n", __func__,__LINE__,Val16);
-
-	Val16 = 0x0; //a2
-	//I2cCtlWriteNostop (I2cRegBaseAddr, MPS_ADDR, 0x1 << 16, 0x1, &Val16);
-	I2cCtlWrite (I2cRegBaseAddr, MPS_ADDR, 0x0, 0x1, &Val16);
-	//I2cCtlWrite (I2cRegBaseAddr, MPS_ADDR, 0x0, 0x1, &Val16);
-  //}
   }
 }
 
