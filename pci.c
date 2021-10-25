@@ -30,7 +30,8 @@ void PciReadOps(DevNode *this, int fd)
   sscanf (str,"%x",&a);
   printf("your input Pci Offset 0x%lx \n",a);
   
-	printf(" Auto Read Pci(Bus:%d Device:%d Function:%d) 0x10 Bar Mem Start, 0x%lx \n",(a>>16),((a>>11)&0x1f),((a>>8)&7), *(volatile unsigned int *)(p + a + 0x10));
+	printf(" Auto Read Pci(Bus:%d Device:%d Function:%d) 0x10 Bar Mem Start, 0x%lx \n",(a>>16),((a>>11)&0x1f),((a>>8)&7), *(volatile unsigned long *)(p + a + 0x10));
+	printf(" Auto Read Pci(Bus:%d Device:%d Function:%d) 0x10 Bar Mem Start, 0x%lx \n",(a>>16),((a>>11)&0x1f),((a>>8)&7), *(volatile unsigned long *)(p + a + 0x4));
   //lack auto know device name array
 }
 
