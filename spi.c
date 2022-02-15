@@ -97,6 +97,7 @@ typedef void            VOID;
 #define FALSE 0
 
 #define INVALID_OFFSET(x)     ((x > 0x400000)||(x < 0x0)) ? TRUE:FALSE
+#define TCM_INVALID_OFFSET(x)     ((x > 0xffffffff)||(x < 0x0)) ? TRUE:FALSE
 #define INVALID_NUM(x)        ((x > 0x400000)||( x <= 0x0)) ? TRUE:FALSE
 #define IS_SST25VF032B(M,D,C) ((M == 0xBF)&&(D == 0x25)&&(C == 0x4A)) ? TRUE:FALSE
 
@@ -767,10 +768,153 @@ void GmacUpdateOps(DevNode *this,int fd)
 }
 
 
+UINTN
+SpiTcmRead (
+  UINTN      Offset,
+  VOID       *Buffer,
+  UINTN      Num
+  // UINTN      BaseRegAddr
+  )
+{
+  // UINTN Ret;
+  UINTN      addr=Offset;
+  UINTN      count=0;
+  UINT8      data[4]={0};
 
-Cmd SpiCmd[3] = {
+  if(!Buffer ||(TCM_INVALID_OFFSET(Offset)) || INVALID_NUM(Num)){
+    // ASSERT(0);
+    return 0;
+  }
+  // DEBUG((DEBUG_INFO,"func %a,BaseRegAddr=0x%lx, offset=0x%x,num=%d\n",__FUNCTION__,BaseRegAddr,Offset,Num));
+  // SpiFlashSetRegBase(BaseRegAddr);
+  SpiFlashInit ();
+  REGSET(REG_SPER, 0x01);//spre:01  mode 0
+  REGSET(REG_SOFTCS ,0x02);  //enable cs1
+
+  // addr
+  REGSET(REG_SPDR,((addr >> 24)&0xff));
+  while(((REGGET(REG_SPSR))&SPI_BUSY) == SPI_BUSY ){
+  }
+  REGGET(REG_SPDR);
+  REGSET(REG_SPDR,((addr >> 16)&0xff));
+  while(((REGGET(REG_SPSR))&SPI_BUSY)  == SPI_BUSY ){
+  }
+  REGGET(REG_SPDR);
+  REGSET(REG_SPDR,((addr >> 8)&0xff));
+  while(((REGGET(REG_SPSR))&SPI_BUSY) == SPI_BUSY ){
+  }
+  REGGET(REG_SPDR);
+  REGSET(REG_SPDR,(addr & 0xff));
+  while(((REGGET(REG_SPSR))&SPI_BUSY) == SPI_BUSY ){
+  }
+  REGGET(REG_SPDR);// addr end
+
+  // REGSET(REG_SPDR,0x00);
+  for(count=0;count<Num;count++)
+  {
+    REGSET(REG_SPDR,0x00);
+    while(((REGGET(REG_SPSR))&SPI_BUSY)  == SPI_BUSY ){
+    }
+    data[count] = REGGET(REG_SPDR);
+    // printf("0x%x\n",data[count]);
+  }
+  REGSET(REG_SOFTCS ,0x22); //disable cs1
+
+  memcpy(Buffer,data,4);
+  SpiFlashReset ();
+  ResetSfcParamReg();
+
+  return 0;
+}
+void ReadTcmOps(DevNode *this,int fd)
+{
+	void * p = NULL;
+  int status ;
+  unsigned int spcr = 0;
+  unsigned int spsr = 0;
+  unsigned int sper = 0;
+  unsigned int param = 0;
+  unsigned long long c = 0;
+  char RecordName[100];
+  unsigned char *Buffer=NULL;
+  int i=0;
+
+  printf("Please Input Pci's Spi Control Address (obtained through Pci Access): ");
+  status = scanf("%s",RecordName);
+  sscanf (RecordName,"%lx",&c);
+  //c = atoi(RecordName);
+
+  //write spi control Address
+  this->devaddr = c;
+
+  /*Transfer Virtul to Phy Addr*/
+  p = vtpa(this->devaddr,fd);
+  SPI_REG_BASE = (UINTN)p & 0xfffffffffffffff0ULL;
+
+  Buffer=malloc(4);
+  printf("\n");
+  SpiTcmRead (0x80d40000,Buffer,1);
+  printf("Tcm locallity 0 access:0x%x\n",Buffer[0]);
+
+  printf("Tcm Vendor and device ID :");
+  for(i=0;i<4;i++)
+  {
+    SpiTcmRead (0x80d40f00+i,Buffer,1);
+    printf("%02x",Buffer[0]);
+  }
+  printf("\n");
+
+  free(Buffer);
+	status = releaseMem(p);
+}
+void ReadSpiOps(DevNode *this,int fd)
+{
+	void * p = NULL;
+  int status ;
+  unsigned int spcr = 0;
+  unsigned int spsr = 0;
+  unsigned int sper = 0;
+  unsigned int param = 0;
+  unsigned long long c = 0;
+  char RecordName[100];
+  // unsigned int Buffer=0;
+  unsigned char *Buffer=NULL;
+
+  printf("Please Input Pci's Spi Control Address (obtained through Pci Access): ");
+  status = scanf("%s",RecordName);
+  sscanf (RecordName,"%lx",&c);
+  //c = atoi(RecordName);
+
+  //write spi control Address
+  this->devaddr = c;
+
+  /*Transfer Virtul to Phy Addr*/
+  p = vtpa(this->devaddr,fd);
+  SPI_REG_BASE = (UINTN)p & 0xfffffffffffffff0ULL;
+  printf("Please Input Read Count: ");
+  c = 0;
+  status = scanf("%s",RecordName);
+  c = atoi(RecordName);
+
+  Buffer=malloc(c);
+  SpiFlashRead (0,Buffer,c);
+  int i=0;
+  for(i=0;i<c;i++)
+  {
+    printf("%02x ",Buffer[i]);
+    if((i+1)%16==0)
+      printf("\n");
+  }
+  printf("\n");
+
+  free(Buffer);
+	status = releaseMem(p);
+}
+Cmd SpiCmd[5] = {
   {"-u",FlashUpdateOps},
   {"-g",GmacUpdateOps},
+  {"-tcm",ReadTcmOps},
+  {"-r",ReadSpiOps},
   {NULL,NULL}
 };
 
