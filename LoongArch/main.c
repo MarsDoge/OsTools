@@ -3,6 +3,8 @@
 #include "acpi.h"
 #include "rtc.h"
 
+char *VersString = "V1.0";
+
 DevList *DevListInstance = NULL;
 
 
@@ -19,6 +21,10 @@ int main(int argc,char *argv[]){
 		printfQ("can't open file,please use root .\n");
 		exit(1);
 	}
+
+  /* OsTools Version */
+  printf("*** OsTools Version to %s ***\n",VersString);
+
 	/*connect dev and cmd list*/
 	ConfInitInstance();
 	GpioInitInstance();
