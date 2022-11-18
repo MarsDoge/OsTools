@@ -28,6 +28,7 @@ int main(int argc,char *argv[]){
 	PciInitInstance();
 	I2cInitInstance();
 	SpdInitInstance();
+	HtInstance();
 
 	/*Draw Dev and Cmd Tree*/
   DrawDevTree();

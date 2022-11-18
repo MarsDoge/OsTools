@@ -172,10 +172,10 @@ SpiFlashInit (
   }
 
   //[spre:spr] [01:00] means clk_div=8
-  REGSET(REG_SPCR, 0x50);//[1:0] [0:0]spr
+  REGSET(REG_SPCR, 0x52);//[1:0] [0:0]spr
   REGSET(REG_SPSR, 0xc0);
-  REGSET(REG_SPER, 0x05);//[1:0] [0:1]spre
-  REGSET(REG_PARAM, 0x40);
+  REGSET(REG_SPER, 0x04);//[1:0] [0:1]spre
+  REGSET(REG_PARAM, 0x20);
   REGSET(REG_TIME, 0x01);
 }
 
