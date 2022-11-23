@@ -5,7 +5,8 @@
 #define readw(addr)  (*(volatile unsigned int *)(addr))
 
 //#define  SPI_ADDR 0x1fe001f0
-#define  SPI_ADDR  0  //Get at runtime
+#define SPI_ADDR  0  //Get at runtime
+#define FLASH_SIZE 4128768
 
 DevNode SpiInstance = {
     "spi",
@@ -788,7 +789,7 @@ SpiTcmRead (
 
     return 0;
 }
-void ReadTcmOps(DevNode *this,int fd)
+void ReadTcmOps (DevNode *this,int fd)
 {
     void * p = NULL;
     int status ;
@@ -842,6 +843,70 @@ void SpiInitInstance(void)
     DevInstanceInsert(&SpiInstance);
 }
 
+
+/**
+ * spi_update_gmac:
+ * @addr: 
+ * @id: 
+ * @mac: mac addr
+ *
+ *
+ **/
+void spi_update_gmac (const char* addr, int id, const char* mac)
+{
+    void * p = NULL;
+    int status ;
+    unsigned int spcr = 0;
+    unsigned int spsr = 0;
+    unsigned int sper = 0;
+    unsigned int param = 0;
+    unsigned long long c = 0;
+    unsigned long long devaddr;
+    char RecordName[100];
+
+    sscanf (addr, "%lx", &c);
+    devaddr = c;
+
+    int fd = open ("/dev/mem", O_RDWR|O_SYNC);
+    if (fd < 0) {
+        printf("can't open file,please use root .\n");
+        return 1;
+    }
+
+    /*Transfer Virtul to Phy Addr*/
+    p = vtpa (devaddr, fd);
+    SPI_REG_BASE = (UINTN)p & 0xfffffffffffffff0ULL;
+
+    //void *buf = malloc(1024*1024*4);
+    unsigned char *buf3 = NULL;
+
+    //char RecordName[30] = {0};
+    int q = 0;
+    for (q = 0; q < 29; q++) {
+        RecordName[q] = 0;
+    }
+
+    unsigned char bufint[7] = {0};
+
+    //parse mac string
+    buf3 = parse_mac (mac);
+    memcpy(bufint, buf3,6);
+
+    if (id == 0) {
+        SpiFlashSafeWrite (0, bufint, 6);
+    } else if (id == 1) {
+        SpiFlashSafeWrite (0x10, bufint, 6);
+    } else {
+        printf("------------ID Error!!!-----------\n");
+        return;
+    }
+
+    printf ("------------ok mac-----------\n");
+    status = releaseMem (p);
+    return status;
+}
+
+
 int spi_update_flash (const char *path)
 {
     void *p = NULL;
@@ -850,8 +915,8 @@ int spi_update_flash (const char *path)
 
     devaddr = 0x1fe001f0;
 
-    int fd = open("/dev/mem",O_RDWR|O_SYNC);
-    if(fd<0){
+    int fd = open ("/dev/mem", O_RDWR|O_SYNC);
+    if(fd < 0) {
         printf("can't open file,please use root .\n");
         return 1;
     }
@@ -860,17 +925,56 @@ int spi_update_flash (const char *path)
     p = vtpa(devaddr, fd);
     SPI_REG_BASE = (UINTN)p;
 
-    void *buf = malloc(1024*1024*4);
+    void *buf = malloc (FLASH_SIZE);
 
     FILE *pfile = fopen(path, "r");
     if (pfile==NULL) {
         printf("Read File Error , PATH error!!!\n");
         return 1;
     }
-    fread(buf, 1024*1024*4, 1, pfile);
+    fread(buf, FLASH_SIZE, 1, pfile);
     printf("------------Read Buf Get Success!-----------\n");
 
-    UpdateBiosInSpiFlash(0, buf, 1024*1024*4);
+    UpdateBiosInSpiFlash(0, buf, FLASH_SIZE);
+
+    status = releaseMem(p);
+    close(fd);
+    return status;
+}
+
+int spi_dump_flash (const char *path)
+{
+    void *p = NULL;
+    int status ;
+    unsigned long long devaddr;
+
+    devaddr = 0x1fe001f0;
+
+    int fd = open ("/dev/mem", O_RDWR |O_SYNC);
+    if(fd < 0) {
+        printf("can't open file,please use root .\n");
+        return 1;
+    }
+
+    /*Transfer Virtul to Phy Addr*/
+    p = vtpa (devaddr, fd);
+    SPI_REG_BASE = (UINTN)p & 0xfffffffffffffff0ULL;
+
+    void *buf = malloc (FLASH_SIZE);
+    SpiFlashRead (0, buf, FLASH_SIZE);
+
+    FILE *pfile = fopen(path, "w");
+    if (pfile==NULL) {
+        printf("Read File Error , PATH error!!!\n");
+        return 1;
+    }
+
+    // FIXME: why 0x00 in head?
+    hexdump (0, buf, 256);
+    fwrite (buf, 1, 4128768, pfile);
+    fflush (pfile);
+    fclose (pfile);
+    free (buf);
 
     status = releaseMem(p);
     close(fd);
@@ -881,10 +985,6 @@ int spi_read_flash (const char* addr, int count)
 {
     void * p = NULL;
     int status ;
-    unsigned int spcr = 0;
-    unsigned int spsr = 0;
-    unsigned int sper = 0;
-    unsigned int param = 0;
     unsigned long long c = 0;
     unsigned long long devaddr;
     unsigned char *Buffer = NULL;
@@ -922,24 +1022,30 @@ int cmd_spi (int argc, const char **argv)
 {
     int flag_read = 0;
     int flag_update = 0;
+    int flag_dump = 0;
     int flag_gmac = 0;
     int flag_tcm = 0;
     int count = 0;
+    int id = 0;
     const char *file = NULL;
     const char *addr = NULL;
+    const char *mac = NULL;
     uid_t uid;
     struct argparse argparse;
 
     struct argparse_option options[] = {
         OPT_HELP (),
-        OPT_GROUP ("Options"),
+        OPT_GROUP ("Options:"),
         OPT_BOOLEAN ('r', "read", &flag_read, "read ls7a spi from address", NULL, 0, 0),
         OPT_BOOLEAN ('u', "update", &flag_update, "update ls3a spi flash", NULL, 0, 0),
+        OPT_BOOLEAN ('d', "dump", &flag_dump, "dump the ls3a spi flash", NULL, 0, 0),
         OPT_BOOLEAN ('g', "gmac", &flag_gmac, "update gmac flash", NULL, 0, 0),
         OPT_BOOLEAN ('t', "tcm", &flag_tcm, "read ls7a tcm from address", NULL, 0, 0),
-        OPT_GROUP ("Arguments"),
-        OPT_STRING ('f', "file", &file, "file path to read", NULL, 0, 0),
-        OPT_STRING ('a', "address", &addr, "Pci's spi control address(e.g. 1fe001f0)", NULL, 0, 0),
+        OPT_GROUP ("Arguments:"),
+        OPT_STRING  ('f', "file", &file, "file path to read/write", NULL, 0, 0),
+        OPT_STRING  ('a', "address", &addr, "Pci's spi control address(e.g. 1fe001f0)", NULL, 0, 0),
+        OPT_INTEGER ('i', "id", &id, "Mac id", NULL, 0, 0),
+        OPT_STRING  ('m', "mac", &mac, "Mac address(e.g. 00:11:22:33:44:55)", NULL, 0, 0),
         OPT_INTEGER ('c', "count", &count, "read count", NULL, 0, 0),
         OPT_END (),
     };
@@ -954,7 +1060,17 @@ int cmd_spi (int argc, const char **argv)
     }
 
     if (flag_update) {
+        if (file == NULL) {
+            printf ("Please setup the file.\n");
+            return 1;
+        }
         spi_update_flash (file);
+    } else if (flag_dump) {
+        if (file == NULL) {
+            printf ("Please setup the file.\n");
+            return 1;
+        }
+        spi_dump_flash (file);
     } else if (flag_read) {
         if (addr == NULL) {
             printf ("Please setup the address.\n");
@@ -966,7 +1082,8 @@ int cmd_spi (int argc, const char **argv)
         }
         spi_read_flash (addr, count);
     } else {
-        printf ("not implement\n");
+        argparse_usage(&argparse);
+        return 1;
     }
     return 0;
 }

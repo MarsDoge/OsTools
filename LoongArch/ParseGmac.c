@@ -2,7 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#define uint unsigned int 
+#define uint unsigned int
 #define uchar unsigned char
 typedef int bool;
 #define true  1
@@ -27,7 +27,7 @@ typedef struct strParseInfo
 }STR_PARSE_INFO_S;
 
 /* Mac 地址以字符串呈现的四种不同方式 */
-STR_PARSE_INFO_S g_astMacInfo[MAC_FORMAT_BUTT]=	
+STR_PARSE_INFO_S g_astMacInfo[MAC_FORMAT_BUTT]=
 {
     {"%c%c%c%c%c%c-%c%c%c%c%c%c",13},
     {"%c%c%c%c-%c%c%c%c-%c%c%c%c",14},
@@ -61,7 +61,7 @@ bool str_2_hex(char *szData,uchar *pucHex)
         szByte[0]= szData[i];
         szByte[1]= szData[i+1];
         *pucHex = (uchar)strtoul(szByte,&pcEndptr,16); /* 将字符转化为指定格式(16进制) */
-        if (2 != (uint)(pcEndptr-szByte))		
+        if (2 != (uint)(pcEndptr-szByte))
         {
             printf("Invalid source str(%s).",szData);
             return false;
@@ -98,7 +98,7 @@ bool ParseMacForStr(Mac_Format enMacfmt,char *szMac,uchar *pucMac)
         uiEnd = enMacfmt;
     }
     for (uiLoop = uiBegin;uiLoop<=uiEnd;++uiLoop)
-    {	
+    {
         /* 逐字符解析并存在szChs中 */
         iParseCnt = sscanf(szMac,g_astMacInfo[uiLoop].szFmt,
                 &szChs[0],&szChs[1],&szChs[2],&szChs[3],
@@ -137,4 +137,3 @@ void* parse_mac(char *szMacStr)
     printf("\n");
     return aucResMac;
 }
-
