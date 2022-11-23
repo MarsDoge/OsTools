@@ -6,7 +6,6 @@
 
 void RtcInitInstance(void);
 
-
-
+int cmd_rtc (int argc, const char **argv);
 
 #endif

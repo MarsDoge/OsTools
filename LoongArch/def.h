@@ -9,6 +9,9 @@
 #include <string.h>
 #include "debug.h"
 
+#define PROGRAM_NAME "ostools"
+#define PROGRAM_VERSION "1.0"
+
 #define LS7A_CONF_BASE_ADDR   0x10010000
 #define LS7A_MISC_BASE_ADDR   0x10080000
 
@@ -25,6 +28,11 @@ typedef struct __DevNode{
   struct __DevNode *prevdev;
 }DevNode;
 #define DevList DevNode
+
+struct cmd_struct {
+    const char *cmd;
+    int (*func) (int, const char **);
+};
 
 typedef void (*DualParam)(DevNode *this,int fd);
 
@@ -50,4 +58,6 @@ void DrawDevTree(void);
 
 /*Func Use*/
 void *vtpa(unsigned long long vaddr,int fd);
+
+void hexdump (unsigned long bse,char* buf,int len);
 #endif
