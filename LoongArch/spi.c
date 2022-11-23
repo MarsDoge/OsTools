@@ -1,4 +1,6 @@
+#include <unistd.h>
 #include "spi.h"
+#include "argparse.h"
 
 #define readw(addr)  (*(volatile unsigned int *)(addr))
 
@@ -651,46 +653,6 @@ SpiFlashSafeWrite (
     free(Buff);
 }
 
-void FlashUpdateOps(DevNode *this,int fd)
-{
-    void * p = NULL;
-    int status ;
-    unsigned int spcr = 0;
-    unsigned int spsr = 0;
-    unsigned int sper = 0;
-    unsigned int param = 0;
-
-    this->devaddr = 0x1fe001f0;
-
-    /*Transfer Virtul to Phy Addr*/
-    p = vtpa(this->devaddr,fd);
-    SPI_REG_BASE = (UINTN)p;
-
-    void *buf = malloc(1024*1024*4);
-
-    printf("Please Input File Name: ");
-    //char RecordName[30] = "LS3A50007A.fd";
-    char RecordName[30] = {0};
-    status = scanf("%s",RecordName);
-    size_t RecordSize = strlen(RecordName);
-
-    FILE *pfile = fopen(RecordName,"r");
-    if (pfile==NULL) {
-        printf("Read File Error , PATH error!!!\n");
-        return 1;
-    }
-    fread(buf,1024*1024*4,1,pfile);
-    printf("------------Read Buf Get Success!-----------\n");
-
-    UpdateBiosInSpiFlash(0,buf,1024*1024*4);
-
-    int tmp = 0;
-    //tmp = readw(p); shutdown slave core and 132
-    printf("%lx\n",tmp);
-
-    status = releaseMem(p);
-}
-
 void* parse_mac(char *szMacStr);
 void GmacUpdateOps(DevNode *this,int fd)
 {
@@ -818,7 +780,7 @@ SpiTcmRead (
         data[count] = REGGET(REG_SPDR);
         // printf("0x%x\n",data[count]);
     }
-    REGSET(REG_SOFTCS ,0x22); //disable cs1
+    REGSET(REG_SOFTCS, 0x22); //disable cs1
 
     memcpy(Buffer,data,4);
     SpiFlashReset ();
@@ -853,7 +815,7 @@ void ReadTcmOps(DevNode *this,int fd)
 
     Buffer=malloc(4);
     printf("\n");
-    SpiTcmRead (0x80d40000,Buffer,1);
+    SpiTcmRead (0x80d40000, Buffer, 1);
     printf("Tcm locallity 0 access:0x%x\n",Buffer[0]);
 
     printf("Tcm Vendor and device ID :");
@@ -867,7 +829,55 @@ void ReadTcmOps(DevNode *this,int fd)
     free(Buffer);
     status = releaseMem(p);
 }
-void ReadSpiOps(DevNode *this,int fd)
+
+Cmd SpiCmd[5] = {
+    {"-g",GmacUpdateOps},
+    {"-tcm",ReadTcmOps},
+    {NULL,NULL}
+};
+
+void SpiInitInstance(void)
+{
+    SpiInstance.CmdInstance = SpiCmd;
+    DevInstanceInsert(&SpiInstance);
+}
+
+int spi_update_flash (const char *path)
+{
+    void *p = NULL;
+    int status ;
+    unsigned long long devaddr;
+
+    devaddr = 0x1fe001f0;
+
+    int fd = open("/dev/mem",O_RDWR|O_SYNC);
+    if(fd<0){
+        printf("can't open file,please use root .\n");
+        return 1;
+    }
+
+    /*Transfer Virtul to Phy Addr*/
+    p = vtpa(devaddr, fd);
+    SPI_REG_BASE = (UINTN)p;
+
+    void *buf = malloc(1024*1024*4);
+
+    FILE *pfile = fopen(path, "r");
+    if (pfile==NULL) {
+        printf("Read File Error , PATH error!!!\n");
+        return 1;
+    }
+    fread(buf, 1024*1024*4, 1, pfile);
+    printf("------------Read Buf Get Success!-----------\n");
+
+    UpdateBiosInSpiFlash(0, buf, 1024*1024*4);
+
+    status = releaseMem(p);
+    close(fd);
+    return status;
+}
+
+int spi_read_flash (const char* addr, int count)
 {
     void * p = NULL;
     int status ;
@@ -876,50 +886,87 @@ void ReadSpiOps(DevNode *this,int fd)
     unsigned int sper = 0;
     unsigned int param = 0;
     unsigned long long c = 0;
-    char RecordName[100];
-    // unsigned int Buffer=0;
-    unsigned char *Buffer=NULL;
+    unsigned long long devaddr;
+    unsigned char *Buffer = NULL;
 
-    printf("Please Input Pci's Spi Control Address (obtained through Pci Access): ");
-    status = scanf("%s",RecordName);
-    sscanf (RecordName,"%lx",&c);
-    //c = atoi(RecordName);
+    sscanf (addr, "%lx", &c);
 
-    //write spi control Address
-    this->devaddr = c;
+    devaddr = c;
+
+    int fd = open("/dev/mem", O_RDWR|O_SYNC);
+    if (fd < 0) {
+        printf("can't open file,please use root .\n");
+        return 1;
+    }
 
     /*Transfer Virtul to Phy Addr*/
-    p = vtpa(this->devaddr,fd);
+    p = vtpa (devaddr, fd);
     SPI_REG_BASE = (UINTN)p & 0xfffffffffffffff0ULL;
-    printf("Please Input Read Count: ");
-    c = 0;
-    status = scanf("%s",RecordName);
-    c = atoi(RecordName);
 
-    Buffer=malloc(c);
-    SpiFlashRead (0,Buffer,c);
-    int i=0;
-    for(i=0;i<c;i++)
-    {
-        printf("%02x ",Buffer[i]);
-        if((i+1)%16==0)
-            printf("\n");
-    }
-    printf("\n");
+    Buffer = malloc (count);
+    SpiFlashRead (0, Buffer, count);
+    hexdump (0, Buffer, count);
 
     free(Buffer);
     status = releaseMem(p);
+    close(fd);
+    return status;
 }
-Cmd SpiCmd[5] = {
-    {"-u",FlashUpdateOps},
-    {"-g",GmacUpdateOps},
-    {"-tcm",ReadTcmOps},
-    {"-r",ReadSpiOps},
-    {NULL,NULL}
+
+static const char *const spi_usages[] = {
+    PROGRAM_NAME" spi <args>",
+    NULL,
 };
 
-void SpiInitInstance(void)
+int cmd_spi (int argc, const char **argv)
 {
-    SpiInstance.CmdInstance = SpiCmd;
-    DevInstanceInsert(&SpiInstance);
+    int flag_read = 0;
+    int flag_update = 0;
+    int flag_gmac = 0;
+    int flag_tcm = 0;
+    int count = 0;
+    const char *file = NULL;
+    const char *addr = NULL;
+    uid_t uid;
+    struct argparse argparse;
+
+    struct argparse_option options[] = {
+        OPT_HELP (),
+        OPT_GROUP ("Options"),
+        OPT_BOOLEAN ('r', "read", &flag_read, "read ls7a spi from address", NULL, 0, 0),
+        OPT_BOOLEAN ('u', "update", &flag_update, "update ls3a spi flash", NULL, 0, 0),
+        OPT_BOOLEAN ('g', "gmac", &flag_gmac, "update gmac flash", NULL, 0, 0),
+        OPT_BOOLEAN ('t', "tcm", &flag_tcm, "read ls7a tcm from address", NULL, 0, 0),
+        OPT_GROUP ("Arguments"),
+        OPT_STRING ('f', "file", &file, "file path to read", NULL, 0, 0),
+        OPT_STRING ('a', "address", &addr, "Pci's spi control address(e.g. 1fe001f0)", NULL, 0, 0),
+        OPT_INTEGER ('c', "count", &count, "read count", NULL, 0, 0),
+        OPT_END (),
+    };
+
+    argparse_init (&argparse, options, spi_usages, 0);
+    argc = argparse_parse (&argparse, argc, argv);
+
+    uid = geteuid ();
+    if (uid != 0) {
+        printf ("Please run with root!\n");
+        return -1;
+    }
+
+    if (flag_update) {
+        spi_update_flash (file);
+    } else if (flag_read) {
+        if (addr == NULL) {
+            printf ("Please setup the address.\n");
+            return 1;
+        }
+        if (count == 0) {
+            printf ("Please setup the count.\n");
+            return 1;
+        }
+        spi_read_flash (addr, count);
+    } else {
+        printf ("not implement\n");
+    }
+    return 0;
 }

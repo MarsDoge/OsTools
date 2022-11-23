@@ -6,7 +6,6 @@
 
 void SpiInitInstance(void);
 
-
-
+int cmd_spi (int argc, const char **argv);
 
 #endif
