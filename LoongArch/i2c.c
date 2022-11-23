@@ -22,6 +22,8 @@
 ##
 */
 
+#include <unistd.h>
+#include <stdio.h>
 #include "i2c.h"
 #define Write64(addr, data)     (*(volatile UINT64*)(addr) = (data))
 #define Write32(addr, data)     (*(volatile UINT32*)(addr) = (data))
