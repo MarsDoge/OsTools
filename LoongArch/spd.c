@@ -53,69 +53,69 @@ typedef unsigned long long            UINT64;
 
 void SpdReadOps(DevNode *this, int fd)
 {
-	void * p = NULL;
-	int status ;
-	char RecordName[30] = {0};
-	int c = 0;
-	char str[30] = {0};
+    void * p = NULL;
+    int status ;
+    char RecordName[30] = {0};
+    int c = 0;
+    char str[30] = {0};
 
-	p = vtpa(this->devaddr,fd);
+    p = vtpa(this->devaddr,fd);
 
-	UINT64 I2cRegBaseAddr, NodeId;
-	UINT16 Val16;
+    UINT64 I2cRegBaseAddr, NodeId;
+    UINT16 Val16;
 
-	I2cRegBaseAddr = p;
-	I2cInitSetFreq (I2cRegBaseAddr, 100000, 42, 0x3a); //Lock Freq
+    I2cRegBaseAddr = p;
+    I2cInitSetFreq (I2cRegBaseAddr, 100000, 42, 0x3a); //Lock Freq
 
-	while (1) {
-		printf ("please input Spdaddr: ");
-		scanf("%s",str);
-		int a = 0;
-		sscanf (str,"%x",&a);
-		printf ("\n");
+    while (1) {
+        printf ("please input Spdaddr: ");
+        scanf("%s",str);
+        int a = 0;
+        sscanf (str,"%x",&a);
+        printf ("\n");
 
-		//Vddn IOUT
-		I2cCtlRead (I2cRegBaseAddr, a, 0x02, 0x1, &Val16);
-		switch (Val16) {
-			case 0xc: 
-				printf (" DDR4 Type:%d \n", Val16);
-				break;
-			default:
-				printf (" No know Type:%d ! \n", Val16);
-				break;
-		}
+        //Vddn IOUT
+        I2cCtlRead (I2cRegBaseAddr, a, 0x02, 0x1, &Val16);
+        switch (Val16) {
+            case 0xc: 
+                printf (" DDR4 Type:%d \n", Val16);
+                break;
+            default:
+                printf (" No know Type:%d ! \n", Val16);
+                break;
+        }
 
-		I2cCtlRead (I2cRegBaseAddr, a, 0x03, 0x1, &Val16);
-		switch (Val16) {
-			case 0x1: 
-				printf (" DRAM Type RDIMM:%d \n", Val16);
-				break;
-			case 0x2: 
-				printf (" DRAM Type UDIMM:%d \n", Val16);
-				break;
-			default:
-				printf (" No know Type:%d ! \n", Val16);
-				break;
-		}
-	}
+        I2cCtlRead (I2cRegBaseAddr, a, 0x03, 0x1, &Val16);
+        switch (Val16) {
+            case 0x1: 
+                printf (" DRAM Type RDIMM:%d \n", Val16);
+                break;
+            case 0x2: 
+                printf (" DRAM Type UDIMM:%d \n", Val16);
+                break;
+            default:
+                printf (" No know Type:%d ! \n", Val16);
+                break;
+        }
+    }
 }
 
 Cmd SpdCmd[2] = {
-  {"-r",SpdReadOps},
-  {NULL,NULL}
+    {"-r",SpdReadOps},
+    {NULL,NULL}
 };
 
 void SpdInitInstance(void)
 {
-   Node0SpdInstance.CmdInstance = SpdCmd;
-   DevInstanceInsert(&Node0SpdInstance);
+    Node0SpdInstance.CmdInstance = SpdCmd;
+    DevInstanceInsert(&Node0SpdInstance);
 
-   Node4SpdInstance.CmdInstance = SpdCmd;
-   DevInstanceInsert(&Node4SpdInstance);
+    Node4SpdInstance.CmdInstance = SpdCmd;
+    DevInstanceInsert(&Node4SpdInstance);
 
-   Node8SpdInstance.CmdInstance = SpdCmd;
-   DevInstanceInsert(&Node8SpdInstance);
+    Node8SpdInstance.CmdInstance = SpdCmd;
+    DevInstanceInsert(&Node8SpdInstance);
 
-   Node12SpdInstance.CmdInstance = SpdCmd;
-   DevInstanceInsert(&Node12SpdInstance);
+    Node12SpdInstance.CmdInstance = SpdCmd;
+    DevInstanceInsert(&Node12SpdInstance);
 }

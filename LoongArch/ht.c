@@ -42,65 +42,65 @@ DevNode Node0_HT1_HI_Instance = {
 
 void HtReadOps(DevNode *this, int fd)
 {
-   /*Save Input History Record*/
-  FILE *pfile = fopen("./ToolRecord.txt", "a+");
-  void *p = NULL;
-  unsigned long long node_id = 0;
-  unsigned long long vaddr = 0;
-  unsigned int c = 0;
+    /*Save Input History Record*/
+    FILE *pfile = fopen("./ToolRecord.txt", "a+");
+    void *p = NULL;
+    unsigned long long node_id = 0;
+    unsigned long long vaddr = 0;
+    unsigned int c = 0;
 
-  while (1) {
-  vaddr = CPU_HT0_LO | (node_id <<44);
-	p = (void*)mmap(NULL,0x10000/*64K*/, PROT_READ|PROT_WRITE,MAP_SHARED,fd,vaddr);
-	c =  *(volatile unsigned int *)(p + 0x68); //retry
-  fwrite( (void *)&c, sizeof(unsigned int),1,pfile);
-  munmap (p,0x10000);
- 
-  vaddr = CPU_HT0_HI | (node_id <<44);
-	p = (void*)mmap(NULL,0x10000/*64K*/, PROT_READ|PROT_WRITE,MAP_SHARED,fd,vaddr);
-	c =  *(volatile unsigned int *)(p + 0x68); //retry
-  fwrite( (void *)&c, sizeof(unsigned int),1,pfile);
-  munmap (p,0x10000);
- 
-  vaddr = CPU_HT1_LO | (node_id <<44);
-	p = (void*)mmap(NULL,0x10000/*64K*/, PROT_READ|PROT_WRITE,MAP_SHARED,fd,vaddr);
-	c =  *(volatile unsigned int *)(p + 0x68); //retry
-  fwrite( (void *)&c, sizeof(unsigned int),1,pfile);
-  munmap (p,0x10000);
+    while (1) {
+        vaddr = CPU_HT0_LO | (node_id <<44);
+        p = (void*)mmap(NULL,0x10000/*64K*/, PROT_READ|PROT_WRITE,MAP_SHARED,fd,vaddr);
+        c =  *(volatile unsigned int *)(p + 0x68); //retry
+        fwrite( (void *)&c, sizeof(unsigned int),1,pfile);
+        munmap (p,0x10000);
 
-  vaddr = CPU_HT1_HI | (node_id <<44);
-	p = (void*)mmap(NULL,0x10000/*64K*/, PROT_READ|PROT_WRITE,MAP_SHARED,fd,vaddr);
-	c =  *(volatile unsigned int *)(p + 0x68); //retry
-  fwrite( (void *)&c, sizeof(unsigned int),1,pfile);
-  munmap (p,0x10000);
+        vaddr = CPU_HT0_HI | (node_id <<44);
+        p = (void*)mmap(NULL,0x10000/*64K*/, PROT_READ|PROT_WRITE,MAP_SHARED,fd,vaddr);
+        c =  *(volatile unsigned int *)(p + 0x68); //retry
+        fwrite( (void *)&c, sizeof(unsigned int),1,pfile);
+        munmap (p,0x10000);
 
-  node_id ++;
-  if (node_id == 8) {
-    node_id = 0;
-  }
-  }
-  close(fd);
+        vaddr = CPU_HT1_LO | (node_id <<44);
+        p = (void*)mmap(NULL,0x10000/*64K*/, PROT_READ|PROT_WRITE,MAP_SHARED,fd,vaddr);
+        c =  *(volatile unsigned int *)(p + 0x68); //retry
+        fwrite( (void *)&c, sizeof(unsigned int),1,pfile);
+        munmap (p,0x10000);
+
+        vaddr = CPU_HT1_HI | (node_id <<44);
+        p = (void*)mmap(NULL,0x10000/*64K*/, PROT_READ|PROT_WRITE,MAP_SHARED,fd,vaddr);
+        c =  *(volatile unsigned int *)(p + 0x68); //retry
+        fwrite( (void *)&c, sizeof(unsigned int),1,pfile);
+        munmap (p,0x10000);
+
+        node_id ++;
+        if (node_id == 8) {
+            node_id = 0;
+        }
+    }
+    close(fd);
 }
 
 Cmd HtCmd[2] = {
-  {"-r",HtReadOps},
-  {NULL,NULL}
+    {"-r",HtReadOps},
+    {NULL,NULL}
 };
 
 void HtInstance(void)
 {
-   Node0_HT0_LO_Instance.CmdInstance = HtCmd;
-   DevInstanceInsert(&Node0_HT0_LO_Instance);
+    Node0_HT0_LO_Instance.CmdInstance = HtCmd;
+    DevInstanceInsert(&Node0_HT0_LO_Instance);
 
-   Node0_HT0_HI_Instance.CmdInstance = HtCmd;
-   DevInstanceInsert(&Node0_HT0_HI_Instance);
+    Node0_HT0_HI_Instance.CmdInstance = HtCmd;
+    DevInstanceInsert(&Node0_HT0_HI_Instance);
 
-   Node0_HT1_LO_Instance.CmdInstance = HtCmd;
-   DevInstanceInsert(&Node0_HT1_LO_Instance);
-   
-   Node0_HT1_HI_Instance.CmdInstance = HtCmd;
-   DevInstanceInsert(&Node0_HT1_HI_Instance);
-   
+    Node0_HT1_LO_Instance.CmdInstance = HtCmd;
+    DevInstanceInsert(&Node0_HT1_LO_Instance);
+
+    Node0_HT1_HI_Instance.CmdInstance = HtCmd;
+    DevInstanceInsert(&Node0_HT1_HI_Instance);
+
 }
 
 
