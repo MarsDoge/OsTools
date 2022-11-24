@@ -756,7 +756,7 @@ static int spi_read_tcm (const char* addr)
  *
  *
  **/
-static void spi_update_gmac (const char* addr, int id, const char* mac)
+static int spi_update_gmac (const char* addr, int id, const char* mac)
 {
     void * p = NULL;
     int status ;
@@ -802,7 +802,7 @@ static void spi_update_gmac (const char* addr, int id, const char* mac)
         SpiFlashSafeWrite (0x10, bufint, 6);
     } else {
         printf("------------ID Error!!!-----------\n");
-        return;
+        return 1;
     }
 
     printf ("------------ok mac-----------\n");

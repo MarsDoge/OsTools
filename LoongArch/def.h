@@ -8,6 +8,11 @@
 #include <sys/mman.h>
 #include <string.h>
 #include "debug.h"
+#include "conf.h"
+#include "rtc.h"
+#include "gpio.h"
+#include "util.h"
+#include "argparse.h"
 
 #define PROGRAM_NAME "ostools"
 #define PROGRAM_VERSION "1.0"
@@ -55,5 +60,6 @@ int DevNodeInsert(DevNode *DevNodeInstance);
 
 void DrawDevTree(void);
 
+int cmd_ht (int argc, const char **argv);
 
 #endif

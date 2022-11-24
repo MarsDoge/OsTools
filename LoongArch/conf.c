@@ -1,22 +1,31 @@
+#include <unistd.h>
 #include "def.h"
-
 
 #define REUSE_BASE_ADDR				0x440
 
-DevNode ConfInstance = {
-    "conf",
+static const char *const conf_usages[] = {
+    PROGRAM_NAME" conf <args>",
     NULL,
-    LS7A_CONF_BASE_ADDR + REUSE_BASE_ADDR,
-    NULL,
-    NULL
 };
 
-void ReuseSetOps(DevNode *this, int fd)
+static int conf_read (void)
 {
     void * p = NULL;
+    unsigned long long devaddr;
+    int fd;
     int status ;
-    int memmask = ConfInstance.devaddr & ~(0xfff);
-    int memoffset = ConfInstance.devaddr & (0xfff);
+
+    devaddr = LS7A_CONF_BASE_ADDR + REUSE_BASE_ADDR;
+
+    int memmask = devaddr & ~(0xfff);
+    int memoffset = devaddr & (0xfff);
+
+    fd = open ("/dev/mem", O_RDWR | O_SYNC);
+    if (fd < 0) {
+        printf("can't open file,please use root .\n");
+        return 1;
+    }
+
     /*Transfer mem Addr*/
     p = (void*)mmap(NULL,1, PROT_READ|PROT_WRITE,MAP_SHARED,fd,memmask);
     p = p + memoffset;
@@ -41,13 +50,34 @@ void ReuseSetOps(DevNode *this, int fd)
     printf("--------------Release mem Map----------------\n");
 }
 
-Cmd ConfCmd[2] = {
-    {"-r",ReuseSetOps},
-    {NULL,NULL}
-};
-
-void ConfInitInstance(void)
+int cmd_conf (int argc, const char **argv)
 {
-    ConfInstance.CmdInstance = ConfCmd;
-    DevInstanceInsert(&ConfInstance);
+    int read = 0;
+    uid_t uid;
+    struct argparse argparse;
+
+    struct argparse_option options[] = {
+        OPT_HELP (),
+        OPT_BOOLEAN ('r', "read", &read, "read conf", NULL, 0, 0),
+        OPT_END (),
+    };
+
+    argparse_init (&argparse, options, conf_usages, 0);
+    argc = argparse_parse (&argparse, argc, argv);
+
+    if (!read) {
+        argparse_usage (&argparse);
+        return 1;
+    }
+
+    uid = geteuid ();
+    if (uid != 0) {
+        printf ("Please run with root!\n");
+        return -1;
+    }
+
+    if (read) {
+        conf_read ();
+    }
+    return 0;
 }

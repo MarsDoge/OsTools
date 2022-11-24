@@ -1,14 +1,11 @@
+#include <unistd.h>
 #include "def.h"
-
 
 #define GPIO_BASE_ADDR				0x60000
 
-DevNode GpioInstance = {
-    "gpio",
+static const char *const gpio_usages[] = {
+    PROGRAM_NAME" gpio <args>",
     NULL,
-    LS7A_MISC_BASE_ADDR + GPIO_BASE_ADDR + 0x900,
-    NULL,
-    NULL
 };
 
 void delay (unsigned long a)
@@ -16,15 +13,28 @@ void delay (unsigned long a)
     while(a--);
 }
 
-void GpioReadOps(DevNode *this,int fd)
+int gpio_read (void)
 {
     void * p = NULL;
-    int status ;
-    int memmask = this->devaddr & ~(0xfff);
-    int memoffset = this->devaddr & (0xfff);
-    /*Transfer mem Addr*/
+    int fd;
+    unsigned long long devaddr;
+    int status;
+
+    devaddr = LS7A_MISC_BASE_ADDR + GPIO_BASE_ADDR + 0x900;
+
+    int memmask = devaddr & ~(0xfff);
+    int memoffset = devaddr & (0xfff);
+
     printf(" %s %d  ,%x\n",__func__,__LINE__,memmask);
     printf(" %s %d  ,%x\n",__func__,__LINE__,memoffset);
+
+    fd = open ("/dev/mem", O_RDWR | O_SYNC);
+    if (fd < 0) {
+        printf("can't open file,please use root .\n");
+        return 1;
+    }
+
+    /*Transfer mem Addr*/
     p = (void*)mmap(NULL,4096, PROT_READ|PROT_WRITE,MAP_SHARED,fd,memmask);
     p = p + memoffset;
     printf("mmap addr start : %p \n",p);
@@ -57,15 +67,37 @@ void GpioReadOps(DevNode *this,int fd)
         printf("----------  Release mem Map Error !!! ------\n");
     }
     printf("--------------Release mem Map----------------\n");
+    return status;
 }
 
-Cmd GpioCmd[2] = {
-    {"-r",GpioReadOps},
-    {NULL,NULL}
-};
-
-void GpioInitInstance(void)
+int cmd_gpio (int argc, const char **argv)
 {
-    GpioInstance.CmdInstance = GpioCmd;
-    DevInstanceInsert(&GpioInstance);
+    int read = 0;
+    uid_t uid;
+    struct argparse argparse;
+
+    struct argparse_option options[] = {
+        OPT_HELP(),
+        OPT_BOOLEAN ('r', "read", &read, "read gpio", NULL, 0, 0),
+        OPT_END(),
+    };
+
+    argparse_init(&argparse, options, gpio_usages, 0);
+    argc = argparse_parse(&argparse, argc, argv);
+
+    if (!(read)) {
+        argparse_usage(&argparse);
+        return 1;
+    }
+
+    uid = geteuid ();
+    if (uid != 0) {
+        printf("Please run with root!\n");
+        return -1;
+    }
+
+    if (read) {
+        gpio_read ();
+    }
+    return 0;
 }

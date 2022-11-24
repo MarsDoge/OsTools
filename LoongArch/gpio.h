@@ -1,12 +1,6 @@
-#ifndef __RTC_H_
-#define __RTC_H_
+#ifndef __GPIO_H_
+#define __GPIO_H_
 
-#include "def.h"
-
-
-void GpioInitInstance(void);
-
-
-
+int cmd_gpio (int argc, const char **argv);
 
 #endif

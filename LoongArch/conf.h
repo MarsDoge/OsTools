@@ -3,10 +3,6 @@
 
 #include "def.h"
 
-
-void ConfInitInstance(void);
-
-
-
+int cmd_conf (int argc, const char **argv);
 
 #endif

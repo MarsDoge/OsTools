@@ -22,6 +22,6 @@
 void *vtpa(unsigned long long vaddr,int fd);
 int releaseMem(void *p);
 void hexdump (unsigned long bse, char *buf, int len);
-void* parse_mac(char *szMacStr);
+void* parse_mac(const char *szMacStr);
 
 #endif /* end of include __UTIL_H__ */

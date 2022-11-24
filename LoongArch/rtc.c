@@ -68,7 +68,7 @@ int cmd_rtc (int argc, const char **argv)
     argparse_init(&argparse, options, rtc_usages, 0);
     argc = argparse_parse(&argparse, argc, argv);
 
-    if ((read + write) < 1) {
+    if (!(read || write)) {
         argparse_usage(&argparse);
         return 1;
     }

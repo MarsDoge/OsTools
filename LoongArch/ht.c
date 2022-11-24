@@ -8,41 +8,12 @@
 #define CPU_HT1_LO 0xefdfe000000ULL
 #define CPU_HT1_HI 0xefdff000000ULL
 
-DevNode Node0_HT0_LO_Instance = {
-    "ht0_lo",
+static const char *const ht_usages[] = {
+    PROGRAM_NAME" ht <args>",
     NULL,
-    CPU_HT0_LO,
-    NULL,
-    NULL
-};
-DevNode Node0_HT0_HI_Instance = {
-    "ht0_hi",
-    NULL,
-    CPU_HT0_HI,
-    NULL,
-    NULL
-};
-DevNode Node0_HT1_LO_Instance = {
-    "ht1_lo",
-    NULL,
-    CPU_HT1_LO,
-    NULL,
-    NULL
-};
-DevNode Node0_HT1_HI_Instance = {
-    "ht1_hi",
-    NULL,
-    CPU_HT1_HI,
-    NULL,
-    NULL
 };
 
-
-
-
-
-
-void HtReadOps(DevNode *this, int fd)
+static int ht_read (void)
 {
     /*Save Input History Record*/
     FILE *pfile = fopen("./ToolRecord.txt", "a+");
@@ -50,6 +21,13 @@ void HtReadOps(DevNode *this, int fd)
     unsigned long long node_id = 0;
     unsigned long long vaddr = 0;
     unsigned int c = 0;
+    int fd;
+
+    fd = open ("/dev/mem", O_RDWR | O_SYNC);
+    if (fd < 0) {
+        printf("can't open file,please use root .\n");
+        return 1;
+    }
 
     while (1) {
         vaddr = CPU_HT0_LO | (node_id <<44);
@@ -80,32 +58,41 @@ void HtReadOps(DevNode *this, int fd)
         if (node_id == 8) {
             node_id = 0;
         }
+        break;
     }
     close(fd);
+    return 0;
 }
 
-Cmd HtCmd[2] = {
-    {"-r",HtReadOps},
-    {NULL,NULL}
-};
-
-void HtInstance(void)
+int cmd_ht (int argc, const char **argv)
 {
-    Node0_HT0_LO_Instance.CmdInstance = HtCmd;
-    DevInstanceInsert(&Node0_HT0_LO_Instance);
+    int read = 0;
+    int reboot = 0;
+    uid_t uid;
+    struct argparse argparse;
 
-    Node0_HT0_HI_Instance.CmdInstance = HtCmd;
-    DevInstanceInsert(&Node0_HT0_HI_Instance);
+    struct argparse_option options[] = {
+        OPT_HELP(),
+        OPT_BOOLEAN ('r', "read", &read, "read ht", NULL, 0, 0),
+        OPT_END(),
+    };
 
-    Node0_HT1_LO_Instance.CmdInstance = HtCmd;
-    DevInstanceInsert(&Node0_HT1_LO_Instance);
+    argparse_init(&argparse, options, ht_usages, 0);
+    argc = argparse_parse(&argparse, argc, argv);
 
-    Node0_HT1_HI_Instance.CmdInstance = HtCmd;
-    DevInstanceInsert(&Node0_HT1_HI_Instance);
+    if (!(read)) {
+        argparse_usage(&argparse);
+        return 1;
+    }
 
+    uid = geteuid ();
+    if (uid != 0) {
+        printf("Please run with root!\n");
+        return -1;
+    }
+
+    if (read) {
+        ht_read ();
+    }
+    return 0;
 }
-
-
-
-
-
