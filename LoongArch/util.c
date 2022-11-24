@@ -5,8 +5,6 @@
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <string.h>
-#include "debug.h"
-#include "util.h"
 
 #define uint unsigned int
 #define uchar unsigned char

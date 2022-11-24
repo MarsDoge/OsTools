@@ -1,4 +1,7 @@
 #include <unistd.h>
+#include <sys/mman.h>
+#include <stdio.h>
+#include <fcntl.h>
 #include "def.h"
 
 #define REUSE_BASE_ADDR				0x440

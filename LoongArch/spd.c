@@ -1,4 +1,6 @@
 #include <unistd.h>
+#include <stdio.h>
+#include <fcntl.h>
 #include "def.h"
 #include "i2c.h"
 

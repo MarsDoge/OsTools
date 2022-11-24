@@ -1,6 +1,7 @@
 #include <unistd.h>
+#include <stdio.h>
+#include <fcntl.h>
 #include "def.h"
-#include "argparse.h"
 
 #define RTC_BASE_ADDR				0x50100
 

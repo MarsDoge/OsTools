@@ -12,8 +12,8 @@ OsTools : OsTools.o
 	$(COMPILE_PATH) -static $(COMPILE_FILE_O) -o OsTools
 	chmod 777 OsTools
 OsTools.o :
-	#$(COMPILE_PATH) -g -c $(COMPILE_FILE_C) 
-	$(COMPILE_PATH) -c $(COMPILE_FILE_C) 
+	#$(COMPILE_PATH) -g -c $(COMPILE_FILE_C)
+	$(COMPILE_PATH) -c $(COMPILE_FILE_C)
 
 clean :
 	rm *.o OsTools

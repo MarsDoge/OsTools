@@ -1,15 +1,12 @@
 #ifndef __DEF_H_
 #define __DEF_H_
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <sys/mman.h>
-#include <string.h>
-#include "debug.h"
-#include "util.h"
 #include "argparse.h"
+
+#ifdef  RELEASE
+  #define printfQ(format,...)
+#else
+  #define printfQ(format,...) printf(format, ##__VA_ARGS__)
+#endif
 
 #define PROGRAM_NAME "OsTools"
 #define PROGRAM_VERSION "1.0"
@@ -34,14 +31,19 @@ struct cmd_struct {
     int (*func) (int, const char **);
 };
 
-int cmd_ht (int argc, const char **argv);
-int cmd_mps (int argc, const char **argv);
-int cmd_spd (int argc, const char **argv);
-int cmd_spi (int argc, const char **argv);
-int cmd_rtc (int argc, const char **argv);
-int cmd_pci (int argc, const char **argv);
+void* vtpa (unsigned long long vaddr,int fd);
+int   releaseMem (void *p);
+void  hexdump (unsigned long bse, char *buf, int len);
+void* parse_mac (const char *szMacStr);
+
 int cmd_acpi (int argc, const char **argv);
 int cmd_conf (int argc, const char **argv);
 int cmd_gpio (int argc, const char **argv);
+int cmd_ht   (int argc, const char **argv);
+int cmd_mps  (int argc, const char **argv);
+int cmd_pci  (int argc, const char **argv);
+int cmd_rtc  (int argc, const char **argv);
+int cmd_spd  (int argc, const char **argv);
+int cmd_spi  (int argc, const char **argv);
 
 #endif

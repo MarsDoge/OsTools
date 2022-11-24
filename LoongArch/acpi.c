@@ -1,6 +1,8 @@
 #include <unistd.h>
+#include <sys/mman.h>
+#include <stdio.h>
+#include <fcntl.h>
 #include "def.h"
-#include "argparse.h"
 
 #define ACPI_BASE_ADDR				0x50000
 #define writeb(addr,val)  (*(volatile unsigned char *)(addr)) = val

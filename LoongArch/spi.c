@@ -1,7 +1,9 @@
 #include <unistd.h>
-#include "argparse.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <fcntl.h>
 #include "def.h"
-#include "util.h"
 
 #define readw(addr)  (*(volatile unsigned int *)(addr))
 
