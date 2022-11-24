@@ -13,8 +13,8 @@ All commands:
     spi        Read or write spi flash
     pci        Read PCI Bus
     ht         Read HT
-    mps       Read or write MPS
-    spd       Read SPD
+    mps        Read or write MPS
+    spd        Read SPD
 
 
     -h, --help        show this help message and exit
