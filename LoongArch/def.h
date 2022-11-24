@@ -56,8 +56,4 @@ int DevNodeInsert(DevNode *DevNodeInstance);
 void DrawDevTree(void);
 
 
-/*Func Use*/
-void *vtpa(unsigned long long vaddr,int fd);
-
-void hexdump (unsigned long bse,char* buf,int len);
 #endif

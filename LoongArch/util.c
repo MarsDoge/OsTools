@@ -1,14 +1,23 @@
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <sys/mman.h>
+#include <string.h>
+#include "debug.h"
+#include "util.h"
 
 #define uint unsigned int
 #define uchar unsigned char
-typedef int bool;
 #define true  1
 #define false 0
-
 #define MAC_ADDRESS_LEN 6		/* mac地址长为6位十六进制数*/
+typedef int bool;
+
+static unsigned long long memmask;
+static int memoffset;
+uchar aucResMac[MAC_ADDRESS_LEN+1]={0};
 
 typedef enum tagMac_Format
 {
@@ -24,7 +33,7 @@ typedef struct strParseInfo
 {
     char *szFmt;
     uint uiLen;
-}STR_PARSE_INFO_S;
+} STR_PARSE_INFO_S;
 
 /* Mac 地址以字符串呈现的四种不同方式 */
 STR_PARSE_INFO_S g_astMacInfo[MAC_FORMAT_BUTT]=
@@ -35,7 +44,92 @@ STR_PARSE_INFO_S g_astMacInfo[MAC_FORMAT_BUTT]=
     {"%c%c:%c%c:%c%c:%c%c:%c%c:%c%c",17},
     {"",0}
 };
-bool str_2_hex(char *szData,uchar *pucHex)
+
+void *vtpa(unsigned long long vaddr,int fd)
+{
+    void *p = NULL;
+    memmask = vaddr & ~(0xffff);
+    memoffset = vaddr & (0xffff);
+    p = (void*)mmap(NULL,0x10000/*64K*/, PROT_READ|PROT_WRITE,MAP_SHARED,fd,memmask);
+    p = p + memoffset;
+    printf("mmap addr start : %p \n",p);
+    return p;
+}
+
+int releaseMem(void *p)
+{
+    int status ;
+    status = munmap(p-memoffset, 1);
+    if(status == -1){
+        printf("----------  Release mem Map Error !!! ------\n");
+    }
+    printf("--------------Release mem Map----------------\n");
+    return status;
+}
+
+void hexdump (unsigned long bse, char *buf, int len)
+{
+    int pos;
+    char line[80];
+
+    while (len > 0)
+    {
+        int cnt, i;
+
+        pos = snprintf (line, sizeof (line), "%08lx  ", bse);
+        cnt = 16;
+        if (cnt > len)
+            cnt = len;
+
+        for (i = 0; i < cnt; i++)
+        {
+            pos += snprintf (&line[pos], sizeof (line) - pos,
+                    "%02x ", (unsigned char) buf[i]);
+            if ((i & 7) == 7)
+                line[pos++] = ' ';
+        }
+
+        for (; i < 16; i++)
+        {
+            pos += snprintf (&line[pos], sizeof (line) - pos, "   ");
+            if ((i & 7) == 7)
+                line[pos++] = ' ';
+        }
+
+        line[pos++] = '|';
+
+        for (i = 0; i < cnt; i++)
+            line[pos++] = ((buf[i] >= 32) && (buf[i] < 127)) ? buf[i] : '.';
+
+        line[pos++] = '|';
+
+        line[pos] = 0;
+
+        printf ("%s\n", line);
+
+        /* Print only first and last line if more than 3 lines are identical.  */
+        if (len >= 4 * 16
+                && ! memcmp (buf, buf + 1 * 16, 16)
+                && ! memcmp (buf, buf + 2 * 16, 16)
+                && ! memcmp (buf, buf + 3 * 16, 16))
+        {
+            printf ("*\n");
+            do
+            {
+                bse += 16;
+                buf += 16;
+                len -= 16;
+            }
+            while (len >= 3 * 16 && ! memcmp (buf, buf + 2 * 16, 16));
+        }
+
+        bse += 16;
+        buf += 16;
+        len -= cnt;
+    }
+}
+
+static bool str_2_hex(char *szData,uchar *pucHex)
 {
     uint uiLen = 0;
     uint i=0;
@@ -74,7 +168,7 @@ bool str_2_hex(char *szData,uchar *pucHex)
    从字符串中解析Mac地址(转为6位十六进制数)
    */
 /************************************************************************/
-bool ParseMacForStr(Mac_Format enMacfmt,char *szMac,uchar *pucMac)
+static bool ParseMacForStr(Mac_Format enMacfmt,char *szMac,uchar *pucMac)
 {
     uint uiBegin = 0;
     uint uiEnd = 0;
@@ -118,7 +212,6 @@ bool ParseMacForStr(Mac_Format enMacfmt,char *szMac,uchar *pucMac)
     return true;
 }
 
-uchar aucResMac[MAC_ADDRESS_LEN+1]={0};
 void* parse_mac(char *szMacStr)
 {
     //char szMacStr[20]="aa:bb:cc:dd:12:b3";
