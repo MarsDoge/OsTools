@@ -1,10 +1,36 @@
 # OsTools
 
-## Example_Spi
- ![avatar](https://raw.githubusercontent.com/MarsDoge/image/master/WechatIMG302.png)
+## Usage
 
-- 1.Choose DevName
-- 2.Choose Ops of Dev
-- 3.perform a specific action
+```
+Usage: OsTools <command> [<args>]
 
-Where the file path is recommended to use a relative path；
+All commands:
+    conf       Config
+    gpio       GPIO
+    rtc        Read or write rtc
+    acpi       Read ACPI or Reboot
+    spi        Read or write spi flash
+    pci        Read PCI Bus
+    ht         Read HT
+    mps       Read or write MPS
+    spd       Read SPD
+
+
+    -h, --help        show this help message and exit
+    -v, --version     show version
+```
+
+## spi example
+
+Update the Firmware from file:
+
+```
+sudo ./OsTools spi -u -f LS3A50007A.fd
+```
+
+Dump the current Firmware to file:
+
+```
+sudo ./OsTools spi -d -f LS3A50007A.dump.fd
+```

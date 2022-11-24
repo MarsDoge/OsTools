@@ -15,8 +15,8 @@ static const char *const usages[] = {
     "    spi        Read or write spi flash\n"
     "    pci        Read PCI Bus\n"
     "    ht         Read HT\n"
-    "    mps       Read or write MPS\n"
-    "    spd       Read SPD\n",
+    "    mps        Read or write MPS\n"
+    "    spd        Read SPD\n",
     NULL,
 };
 
