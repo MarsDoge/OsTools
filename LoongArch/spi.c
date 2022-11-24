@@ -1,6 +1,8 @@
 #include <unistd.h>
 #include "spi.h"
 #include "argparse.h"
+#include "def.h"
+#include "util.h"
 
 #define readw(addr)  (*(volatile unsigned int *)(addr))
 
@@ -8,13 +10,6 @@
 #define SPI_ADDR  0  //Get at runtime
 #define FLASH_SIZE 4128768
 
-DevNode SpiInstance = {
-    "spi",
-    NULL,
-    SPI_ADDR,
-    NULL,
-    NULL
-};
 typedef unsigned char           UINT8;
 typedef char           INT8;
 typedef unsigned int           UINT32;
@@ -654,83 +649,6 @@ SpiFlashSafeWrite (
     free(Buff);
 }
 
-void* parse_mac(char *szMacStr);
-void GmacUpdateOps(DevNode *this,int fd)
-{
-    void * p = NULL;
-    int status ;
-    unsigned int spcr = 0;
-    unsigned int spsr = 0;
-    unsigned int sper = 0;
-    unsigned int param = 0;
-    unsigned long long c = 0;
-    char RecordName[100];
-
-    printf("Please Input Pci's Spi Control Address (obtained through Pci Access): ");
-    status = scanf("%s",RecordName);
-    sscanf (RecordName,"%lx",&c);
-    //c = atoi(RecordName);
-
-    //write spi control Address
-    this->devaddr = c;
-
-    /*Transfer Virtul to Phy Addr*/
-    p = vtpa(this->devaddr,fd);
-    SPI_REG_BASE = (UINTN)p & 0xfffffffffffffff0ULL;
-
-    //void *buf = malloc(1024*1024*4);
-    unsigned char *buf3 = NULL;
-
-    //char RecordName[30] = {0};
-    int q = 0;
-    for(q = 0; q<29; q++){
-        RecordName[q] = 0;
-    }
-    printf("Please Input Gmac id: ");
-
-    char buf[6][20] = {0};
-    unsigned char bufint[7] = {0};
-
-    int j = 0;
-    int k = 0;
-    int i = 0;
-    //GmacUpdateOps
-    c = 0;
-    status = scanf("%s",RecordName);
-    c = atoi(RecordName);
-    printf("\n");
-    if (c == 0){
-        printf("Example Mac burn addr: 11:22:33:44:55:66 !!!\n");
-        printf("Please Input Mac%d burn addr,Use (:) separate:",c);
-        status = scanf("%s",RecordName);
-
-        //parse mac string
-        buf3 = parse_mac(RecordName);
-        memcpy(bufint,buf3,6);
-
-        SpiFlashSafeWrite(0,bufint,6);
-    } else if (c == 1){
-        printf("Example Mac burn addr: 11:22:33:44:55:66 !!!\n");
-        printf("Please Input Mac%d burn addr,Use (:) separate:",c);
-        status = scanf("%s",RecordName);
-
-        //parse mac string
-        buf3 = parse_mac(RecordName);
-        memcpy(bufint,buf3,6);
-
-        SpiFlashSafeWrite(0x10,bufint,6);
-    } else {
-        printf("------------ID Error!!!-----------\n");
-        return ;
-    }
-    printf("------------ok mac-----------\n");
-    // char buf1[3] = {0x11,0x22,0x33};
-    // UpdateBiosInSpiFlash(0,buf1,2);
-
-    status = releaseMem(p);
-}
-
-
 UINTN
 SpiTcmRead (
         UINTN      Offset,
@@ -789,29 +707,27 @@ SpiTcmRead (
 
     return 0;
 }
-void ReadTcmOps (DevNode *this,int fd)
+
+static int spi_read_tcm (const char* addr)
 {
     void * p = NULL;
     int status ;
-    unsigned int spcr = 0;
-    unsigned int spsr = 0;
-    unsigned int sper = 0;
-    unsigned int param = 0;
+    unsigned long long devaddr;
     unsigned long long c = 0;
-    char RecordName[100];
     unsigned char *Buffer=NULL;
     int i=0;
 
-    printf("Please Input Pci's Spi Control Address (obtained through Pci Access): ");
-    status = scanf("%s",RecordName);
-    sscanf (RecordName,"%lx",&c);
-    //c = atoi(RecordName);
+    sscanf (addr, "%lx",&c);
+    devaddr = c;
 
-    //write spi control Address
-    this->devaddr = c;
+    int fd = open("/dev/mem", O_RDWR|O_SYNC);
+    if (fd < 0) {
+        printf("can't open file,please use root .\n");
+        return 1;
+    }
 
     /*Transfer Virtul to Phy Addr*/
-    p = vtpa(this->devaddr,fd);
+    p = vtpa(devaddr, fd);
     SPI_REG_BASE = (UINTN)p & 0xfffffffffffffff0ULL;
 
     Buffer=malloc(4);
@@ -829,20 +745,8 @@ void ReadTcmOps (DevNode *this,int fd)
 
     free(Buffer);
     status = releaseMem(p);
+    return status;
 }
-
-Cmd SpiCmd[5] = {
-    {"-g",GmacUpdateOps},
-    {"-tcm",ReadTcmOps},
-    {NULL,NULL}
-};
-
-void SpiInitInstance(void)
-{
-    SpiInstance.CmdInstance = SpiCmd;
-    DevInstanceInsert(&SpiInstance);
-}
-
 
 /**
  * spi_update_gmac:
@@ -1053,7 +957,7 @@ int cmd_spi (int argc, const char **argv)
     argparse_init (&argparse, options, spi_usages, 0);
     argc = argparse_parse (&argparse, argc, argv);
 
-    if (!(flag_update || flag_dump || flag_read)) {
+    if (!(flag_update || flag_dump || flag_read || flag_tcm)) {
         argparse_usage(&argparse);
         return 1;
     }
@@ -1086,6 +990,12 @@ int cmd_spi (int argc, const char **argv)
             return 1;
         }
         spi_read_flash (addr, count);
+    } else if (flag_tcm) {
+        if (addr == NULL) {
+            printf ("Please setup the address.\n");
+            return 1;
+        }
+        spi_read_tcm (addr);
     }
     return 0;
 }

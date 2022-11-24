@@ -1,4 +1,4 @@
-#include "acpi.h"
+#include "def.h"
 
 //#define SPI_CONFUSE_SPACE (0x0efdfe000000 + 0x8000/*Need 4K align*/ ) //b000 is Spi,so add 0x3000
 #define PCI_CONFUSE_SPACE 0x0efdfe000000

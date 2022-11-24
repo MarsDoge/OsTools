@@ -1,8 +1,8 @@
 #include "def.h"
+#include "argparse.h"
 #include "acpi.h"
 #include "rtc.h"
 #include "spi.h"
-#include "argparse.h"
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0]))
 
@@ -14,7 +14,7 @@ static const char *const usages[] = {
 //    "    conf       Conf\n"
 //    "    gpio       Conf\n"
     "    rtc        Read or write rtc\n"
-//    "    acpi       Conf\n"
+    "    acpi       Read ACPI or Reboot\n"
     "    spi        Read or write spi flash\n"
 //    "    pci        Conf"
 //    "    mps0           \n"
@@ -35,6 +35,7 @@ static const char *const usages[] = {
 static struct cmd_struct commands[] = {
     {"spi", cmd_spi},
     {"rtc", cmd_rtc},
+    {"acpi", cmd_acpi},
 };
 
 int main (int argc, const char *argv[])

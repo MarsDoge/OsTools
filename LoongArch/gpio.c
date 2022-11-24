@@ -1,4 +1,4 @@
-#include "acpi.h"
+#include "def.h"
 
 
 #define GPIO_BASE_ADDR				0x60000

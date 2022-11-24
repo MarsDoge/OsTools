@@ -1,4 +1,4 @@
-#include "acpi.h"
+#include "def.h"
 
 
 #define REUSE_BASE_ADDR				0x440
@@ -10,8 +10,6 @@ DevNode ConfInstance = {
     NULL,
     NULL
 };
-
-
 
 void ReuseSetOps(DevNode *this, int fd)
 {
