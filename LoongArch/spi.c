@@ -11,15 +11,6 @@
 #define SPI_ADDR  0  //Get at runtime
 #define FLASH_SIZE 4128768
 
-typedef unsigned char           UINT8;
-typedef char           INT8;
-typedef unsigned int           UINT32;
-typedef int           INT32;
-typedef unsigned short           UINT16;
-typedef unsigned long long            UINT64;
-typedef unsigned long long            UINTN;
-typedef long long            INTN;
-typedef void            VOID;
 #define GPIO_0        (0x1<<0)
 #define GPIO_1        (0x1<<1)
 #define GPIO_2        (0x1<<2)
@@ -874,8 +865,6 @@ static int spi_dump_flash (const char *path)
         return 1;
     }
 
-    // FIXME: why 0x00 in head?
-    hexdump (0, buf, 256);
     fwrite (buf, 1, 4128768, pfile);
     fflush (pfile);
     fclose (pfile);
