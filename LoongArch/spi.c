@@ -852,7 +852,7 @@ void SpiInitInstance(void)
  *
  *
  **/
-void spi_update_gmac (const char* addr, int id, const char* mac)
+static void spi_update_gmac (const char* addr, int id, const char* mac)
 {
     void * p = NULL;
     int status ;
@@ -907,7 +907,7 @@ void spi_update_gmac (const char* addr, int id, const char* mac)
 }
 
 
-int spi_update_flash (const char *path)
+static int spi_update_flash (const char *path)
 {
     void *p = NULL;
     int status ;
@@ -942,7 +942,7 @@ int spi_update_flash (const char *path)
     return status;
 }
 
-int spi_dump_flash (const char *path)
+static int spi_dump_flash (const char *path)
 {
     void *p = NULL;
     int status ;
@@ -981,7 +981,7 @@ int spi_dump_flash (const char *path)
     return status;
 }
 
-int spi_read_flash (const char* addr, int count)
+static int spi_read_flash (const char* addr, int count)
 {
     void * p = NULL;
     int status ;
@@ -1053,6 +1053,11 @@ int cmd_spi (int argc, const char **argv)
     argparse_init (&argparse, options, spi_usages, 0);
     argc = argparse_parse (&argparse, argc, argv);
 
+    if (!(flag_update || flag_dump || flag_read)) {
+        argparse_usage(&argparse);
+        return 1;
+    }
+
     uid = geteuid ();
     if (uid != 0) {
         printf ("Please run with root!\n");
@@ -1081,9 +1086,6 @@ int cmd_spi (int argc, const char **argv)
             return 1;
         }
         spi_read_flash (addr, count);
-    } else {
-        argparse_usage(&argparse);
-        return 1;
     }
     return 0;
 }
