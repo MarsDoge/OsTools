@@ -49,20 +49,10 @@
   @retval RETURN_DEVICE_ERROR   The I2c controller could not be setted.
 
  **/
-typedef unsigned char           UINT8;
-typedef char           INT8;
-typedef unsigned char           UINT8;
-typedef unsigned int           UINT32;
-typedef int           INT32;
-typedef unsigned short           UINT16;
-typedef unsigned long long            UINT64;
-typedef unsigned long long            UINTN;
-typedef long long            INTN;
-typedef void            VOID;
 #define ALGORITHM_3A 0x3a
 #define ALGORITHM_7A 0x7a
 
-    int
+int
 I2cInitSetFreq (
         UINTN                                CtlAddr,
         UINTN                                CtlClock,

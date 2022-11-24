@@ -24,6 +24,8 @@
 #ifndef  _I2C_BUS_H_
 #define  _I2C_BUS_H_
 
+#include "def.h"
+
 /*
  * I2C Reg Description
  * */
@@ -54,5 +56,29 @@
 
 #define MST_EN    0x00000020
 #define SLV_EN    0x00000080
+
+int
+I2cCtlRead (
+        UINTN                                CtlAddr,
+        UINTN                                DeviceAddr,
+        UINTN                                DataAddr,
+        UINTN                                DataByte,
+        VOID                             *Buffer
+);
+int
+I2cCtlWrite (
+        UINTN                                CtlAddr,
+        UINTN                                DeviceAddr,
+        UINTN                                DataAddr,
+        UINTN                                DataByte,
+        VOID                             *Buffer
+);
+int
+I2cInitSetFreq (
+        UINTN                                CtlAddr,
+        UINTN                                CtlClock,
+        UINTN                                Frequency, //Bus clk frequency
+        UINT8                                Algorithm
+);
 
 #endif

@@ -1,13 +1,7 @@
 #include "def.h"
 #include "argparse.h"
-#include "acpi.h"
-#include "rtc.h"
-#include "pci.h"
-#include "spi.h"
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0]))
-
-DevList *DevListInstance = NULL;
 
 static const char *const usages[] = {
     PROGRAM_NAME " <command> [<args>]\n"
@@ -19,15 +13,9 @@ static const char *const usages[] = {
     "    spi        Read or write spi flash\n"
     "    pci        Read PCI Bus\n"
     "    ht         Read HT\n"
-//    "    mps0           \n"
-//    "    mps1           \n"
-//    "    mps2           \n"
-//    "    mps3           \n"
-//    "    spd0           \n"
-//    "    spd1           \n"
-//    "    spd2           \n"
-//    "    spd3           \n"
-    ,NULL,
+    "    mps       Read or write MPS\n"
+    "    spd       Read SPD\n",
+    NULL,
 };
 
 static struct cmd_struct commands[] = {
@@ -38,6 +26,8 @@ static struct cmd_struct commands[] = {
     {"pci", cmd_pci},
     {"gpio", cmd_gpio},
     {"ht", cmd_ht},
+    {"mps", cmd_mps},
+    {"spd", cmd_spd},
 };
 
 int main (int argc, const char *argv[])

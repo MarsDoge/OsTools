@@ -8,58 +8,40 @@
 #include <sys/mman.h>
 #include <string.h>
 #include "debug.h"
-#include "conf.h"
-#include "rtc.h"
-#include "gpio.h"
 #include "util.h"
 #include "argparse.h"
 
-#define PROGRAM_NAME "ostools"
+#define PROGRAM_NAME "OsTools"
 #define PROGRAM_VERSION "1.0"
 
 #define LS7A_CONF_BASE_ADDR   0x10010000
 #define LS7A_MISC_BASE_ADDR   0x10080000
 
-typedef struct __Cmd{
-  char *CmdName;
-  void *CmdOps;
-}Cmd;
-
-typedef struct __DevNode{
-  char    *devname;
-  Cmd     *CmdInstance;
-  unsigned long long devaddr;
-  struct __DevNode *nextdev;
-  struct __DevNode *prevdev;
-}DevNode;
-#define DevList DevNode
+typedef char                INT8;
+typedef unsigned char       UINT8;
+typedef short               INT16;
+typedef unsigned short      UINT16;
+typedef int                 INT32;
+typedef unsigned int        UINT32;
+typedef long long           INT64;
+typedef unsigned long long  UINT64;
+typedef long long           INTN;
+typedef unsigned long long  UINTN;
+typedef void                VOID;
 
 struct cmd_struct {
     const char *cmd;
     int (*func) (int, const char **);
 };
 
-typedef void (*DualParam)(DevNode *this,int fd);
-
-extern DevList *DevListInstance;
-
-/*  return devtail
- *  //if return is NULL, no dev in DevList.
- *  if return is not NULL, and if return.name is NULL,this list is no create.
- *  if return is not NULL, and if return.name is not NULL, this taildev is returned.
- * */
-DevNode *GetDevListTail(void);
-
-DevNode* GetDevNodeInstance(const char *devname,size_t cmpsize);
-/*
- * Insert Node Dynamic Data.
- * return 0 is success;
- * */
-int DevNodeInsert(DevNode *DevNodeInstance);
-
-
-void DrawDevTree(void);
-
 int cmd_ht (int argc, const char **argv);
+int cmd_mps (int argc, const char **argv);
+int cmd_spd (int argc, const char **argv);
+int cmd_spi (int argc, const char **argv);
+int cmd_rtc (int argc, const char **argv);
+int cmd_pci (int argc, const char **argv);
+int cmd_acpi (int argc, const char **argv);
+int cmd_conf (int argc, const char **argv);
+int cmd_gpio (int argc, const char **argv);
 
 #endif

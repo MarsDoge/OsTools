@@ -1,5 +1,4 @@
 #include <unistd.h>
-#include "spi.h"
 #include "argparse.h"
 #include "def.h"
 #include "util.h"

@@ -1,6 +1,5 @@
 #include <unistd.h>
 #include "def.h"
-#include "acpi.h"
 #include "argparse.h"
 
 #define ACPI_BASE_ADDR				0x50000
