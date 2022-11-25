@@ -1,78 +1,69 @@
-
+#include <stdio.h>
+#include <string.h>
 #include "def.h"
-#include "acpi.h"
-#include "rtc.h"
+#include "argparse.h"
 
-char *VersString = "V1.0";
+#define ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0]))
 
-DevList *DevListInstance = NULL;
+static const char *const usages[] = {
+    PROGRAM_NAME " <command> [<args>]\n"
+    "\nAll commands:\n"
+    "    conf       Config\n"
+    "    gpio       GPIO\n"
+    "    rtc        Read or write rtc\n"
+    "    acpi       Read ACPI or Reboot\n"
+    "    spi        Read or write spi flash\n"
+    "    pci        Read PCI Bus\n"
+    "    ht         Read HT\n"
+    "    mps        Read or write MPS\n"
+    "    spd        Read SPD\n",
+    NULL,
+};
 
+static struct cmd_struct commands[] = {
+    {"acpi", cmd_acpi},
+    {"conf", cmd_conf},
+    {"rtc", cmd_rtc},
+    {"spi", cmd_spi},
+    {"pci", cmd_pci},
+    {"gpio", cmd_gpio},
+    {"ht", cmd_ht},
+    {"mps", cmd_mps},
+    {"spd", cmd_spd},
+};
 
-int main(int argc,char *argv[]){
-	int tmp = 0,flag = 0,status = 0;
-  unsigned char index;
-	if(argc!=1){
-		printfQ("Access Func Fail, please get help !!! \n");
-		return;
-	}
+int main (int argc, const char *argv[])
+{
+    int version = 0;
+    struct argparse argparse;
+    struct argparse_option options[] = {
+        OPT_HELP(),
+        OPT_BOOLEAN('v', "version", &version, "show version", NULL, 0, 0),
+        OPT_END(),
+    };
+    argparse_init(&argparse, options, usages, 1);
+    argc = argparse_parse(&argparse, argc, argv);
 
-  int fd = open("/dev/mem",O_RDWR|O_SYNC);
-	if(fd<0){
-		printfQ("can't open file,please use root .\n");
-		exit(1);
-	}
+    if (version) {
+        printf("%s %s\n", PROGRAM_NAME, PROGRAM_VERSION);
+        return 0;
+    }
 
-  /* OsTools Version */
-  printf("*** OsTools Version to %s ***\n",VersString);
+    if (argc < 1) {
+        argparse_usage(&argparse);
+        return -1;
+    }
 
-	/*connect dev and cmd list*/
-	ConfInitInstance();
-	GpioInitInstance();
-	RtcInitInstance();
-	AcpiInitInstance();
-	SpiInitInstance();
-	PciInitInstance();
-	I2cInitInstance();
-	SpdInitInstance();
-	HtInstance();
+    /* Try to run command with args provided. */
+    struct cmd_struct *cmd = NULL;
+    for (int i = 0; i < ARRAY_SIZE(commands); i++) {
+        if (strcmp(commands[i].cmd, argv[0]) == 0) {
+            cmd = &commands[i];
+        }
+    }
 
-	/*Draw Dev and Cmd Tree*/
-  DrawDevTree();
-
-  /*GetFuncDev*/
-  DevNode* NodeTmp = NULL;
-  printf("Please Input Dev Name:  ");
-
-  /*Create File save it*/
-  char RecordName[10] = {0};
-  status = scanf("%s",RecordName);
-  size_t RecordSize = strlen(RecordName);
-  if(RecordSize >= (sizeof(RecordName)/sizeof(char))){
-		printf("DevName is too long,please confirm!!! .\n");
-    return 1;
-  }
-
-  /*Save Input History Record*/
-  FILE *pfile = fopen("./.ToolSetRecord.txt", "a+");
-  RecordName[9] = '\n';
-  fwrite( (void *)RecordName, sizeof(char),10,pfile);
-  fclose(pfile);
-
-  NodeTmp = GetDevNodeInstance(RecordName,RecordSize);
-  /*Get Cmd Num*/
-  index = 0;
-  while((Cmd*)(NodeTmp->CmdInstance + index)->CmdName != NULL)
-  {
-    printf("%d : %s \n",index,(Cmd*)(NodeTmp->CmdInstance + index)->CmdName);
-    index++;
-  }
-
-  printf("Please Input Ops Num...\n");
-  status = scanf("%s",RecordName);
-  index = atoi(RecordName);
-  ((DualParam)(NodeTmp->CmdInstance[index].CmdOps))(NodeTmp,fd);
-
-
-  close(fd);
+    if (cmd) {
+        return cmd->func(argc, argv);
+    }
+    return 0;
 }
-

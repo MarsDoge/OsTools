@@ -22,6 +22,8 @@
 ##
 */
 
+#include <unistd.h>
+#include <stdio.h>
 #include "i2c.h"
 #define Write64(addr, data)     (*(volatile UINT64*)(addr) = (data))
 #define Write32(addr, data)     (*(volatile UINT32*)(addr) = (data))
@@ -46,49 +48,39 @@
   @retval RETURN_SUCCESS        The I2c controller was setted.
   @retval RETURN_DEVICE_ERROR   The I2c controller could not be setted.
 
-**/
-typedef unsigned char           UINT8;
-typedef char           INT8;
-typedef unsigned char           UINT8;
-typedef unsigned int           UINT32;
-typedef int           INT32;
-typedef unsigned short           UINT16;
-typedef unsigned long long            UINT64;
-typedef unsigned long long            UINTN;
-typedef long long            INTN;
-typedef void            VOID;
+ **/
 #define ALGORITHM_3A 0x3a
 #define ALGORITHM_7A 0x7a
 
 int
 I2cInitSetFreq (
-   UINTN                                CtlAddr,
-   UINTN                                CtlClock,
-   UINTN                                Frequency, //Bus clk frequency
-   UINT8                                Algorithm
-  )
+        UINTN                                CtlAddr,
+        UINTN                                CtlClock,
+        UINTN                                Frequency, //Bus clk frequency
+        UINT8                                Algorithm
+        )
 {
-  UINT8  PrerLo = 0, PrerHi = 0;
-  UINTN  CpuI2cBase = CtlAddr;
+    UINT8  PrerLo = 0, PrerHi = 0;
+    UINTN  CpuI2cBase = CtlAddr;
 
-  /*Calculate FREQ_LO and FREQ_HI*/
-  if (Algorithm == ALGORITHM_3A){
-    // Prcescale = clock_a /(4*clock_s) -1
-    PrerLo = (CtlClock / (4*Frequency) - 1) & 0xff; //CLK_BASE is Controller clock
-    PrerHi = ((CtlClock / (4*Frequency) - 1) & 0xff00) >> 8;
-  } else if (Algorithm == ALGORITHM_7A) {
-    // Prcescale = clock_b /(5*clock_s) -1
-    PrerLo = (CtlClock / (5*Frequency) - 1) & 0xff; //CLK_BASE is Controller clock
-    PrerHi = ((CtlClock / (5*Frequency) - 1) & 0xff00) >> 8;
-  }
+    /*Calculate FREQ_LO and FREQ_HI*/
+    if (Algorithm == ALGORITHM_3A){
+        // Prcescale = clock_a /(4*clock_s) -1
+        PrerLo = (CtlClock / (4*Frequency) - 1) & 0xff; //CLK_BASE is Controller clock
+        PrerHi = ((CtlClock / (4*Frequency) - 1) & 0xff00) >> 8;
+    } else if (Algorithm == ALGORITHM_7A) {
+        // Prcescale = clock_b /(5*clock_s) -1
+        PrerLo = (CtlClock / (5*Frequency) - 1) & 0xff; //CLK_BASE is Controller clock
+        PrerHi = ((CtlClock / (5*Frequency) - 1) & 0xff00) >> 8;
+    }
 
-  /*Config I2c's Freq*/
-  Readb(CpuI2cBase + CTR_REG) &= ~(1<<7);
-  Writeb(CpuI2cBase + PRER_LO_REG,PrerLo);
-  Writeb(CpuI2cBase + PRER_HI_REG,PrerHi);
-  Readb(CpuI2cBase + CTR_REG) |= (1<<7);
+    /*Config I2c's Freq*/
+    Readb(CpuI2cBase + CTR_REG) &= ~(1<<7);
+    Writeb(CpuI2cBase + PRER_LO_REG,PrerLo);
+    Writeb(CpuI2cBase + PRER_HI_REG,PrerHi);
+    Readb(CpuI2cBase + CTR_REG) |= (1<<7);
 
-  return 0;
+    return 0;
 }
 
 /**
@@ -102,21 +94,21 @@ I2cInitSetFreq (
   @retval RETURN_SUCCESS        The I2c controller was setted.
   @retval RETURN_DEVICE_ERROR   The I2c controller could not be setted.
 
-**/
+ **/
 
-VOID
+    VOID
 I2cSetSlave (
-   UINT8                          CtlAddr,
-   UINT8                          SlaveAddr //0-6Bit
-  )
+        UINT8                          CtlAddr,
+        UINT8                          SlaveAddr //0-6Bit
+        )
 {
-  UINTN   CpuI2cBase = CtlAddr;
+    UINTN   CpuI2cBase = CtlAddr;
 
-  /*Slave Mode and Set Slave addr*/
-  Readb(CpuI2cBase + CTR_REG)  &= ~MST_EN;
-  Readb(CpuI2cBase + SLV_CTRL) = SlaveAddr | SLV_EN;
+    /*Slave Mode and Set Slave addr*/
+    Readb(CpuI2cBase + CTR_REG)  &= ~MST_EN;
+    Readb(CpuI2cBase + SLV_CTRL) = SlaveAddr | SLV_EN;
 
-  return ;
+    return ;
 }
 
 /**
@@ -130,67 +122,67 @@ I2cSetSlave (
 
   @retval 0                NumberOfBytes is 0.
   @retval >0               The number of bytes read from the I2c device.
-                           If this value is less than NumberOfBytes, then the read operation failed.
+  If this value is less than NumberOfBytes, then the read operation failed.
 
-**/
-int
+ **/
+    int
 I2cCtlRead (
-   UINTN                                CtlAddr,
-   UINTN                                DeviceAddr,
-   UINTN                                DataAddr,
-   UINTN                                DataByte,
-    VOID                             *Buffer
-  )
+        UINTN                                CtlAddr,
+        UINTN                                DeviceAddr,
+        UINTN                                DataAddr,
+        UINTN                                DataByte,
+        VOID                             *Buffer
+        )
 {
-  UINT8 i;
-  UINTN CpuI2cBase = CtlAddr;
+    UINT8 i;
+    UINTN CpuI2cBase = CtlAddr;
 
-  /*Send Write Ops to Dev Addr*/
-  Writeb(CpuI2cBase + TXR_REG,DeviceAddr << 1);
-  Writeb(CpuI2cBase + CR_REG,CR_START | CR_WRITE);
-  while (Readb(CpuI2cBase + SR_REG) & SR_TIP);
-  if(Readb(CpuI2cBase + SR_REG) & SR_NOACK){
-    printf("Error:No Ack Receive!\n");
-    goto again;
-  }
-  /*Send Write Ops to Data Addr*/
-  Writeb(CpuI2cBase + TXR_REG,DataAddr);
-  Writeb(CpuI2cBase + CR_REG,CR_WRITE);
-  while (Readb(CpuI2cBase + SR_REG) & SR_TIP);
-  /*Check ACK*/
-  if(Readb(CpuI2cBase + SR_REG) & SR_NOACK){
-    printf("Error:No Ack Receive!\n");
-    goto again;
-  }
-
-  /*Read Data*/
-  //Start Read Signal 0Bit=1 is Read, 0 is write.
-  Writeb(CpuI2cBase + TXR_REG,(DeviceAddr << 1) | 0x01);
-  Writeb(CpuI2cBase + CR_REG,CR_START | CR_WRITE);
-  while (Readb(CpuI2cBase + SR_REG) & SR_TIP);
-  if(Readb(CpuI2cBase + SR_REG) & SR_NOACK){
-    printf("Error:No Ack Receive!\n");
-    goto again;
-  }
-
-  //Really start to poll to grab Buffer data
-  if (Buffer == 0) {
-    printf("Error:Input parameter buffer error!!!\n");
-    return 2;
-  }
-  for(i = 0; i < DataByte; i++) {
-    Writeb(CpuI2cBase + CR_REG,((i == DataByte - 1) ? (CR_READ | CR_ACK) : CR_READ));
+    /*Send Write Ops to Dev Addr*/
+    Writeb(CpuI2cBase + TXR_REG,DeviceAddr << 1);
+    Writeb(CpuI2cBase + CR_REG,CR_START | CR_WRITE);
     while (Readb(CpuI2cBase + SR_REG) & SR_TIP);
-    ((UINT8 *)Buffer)[i] = Readb(CpuI2cBase + RXR_REG);
-  }
+    if(Readb(CpuI2cBase + SR_REG) & SR_NOACK){
+        printf("Error:No Ack Receive!\n");
+        goto again;
+    }
+    /*Send Write Ops to Data Addr*/
+    Writeb(CpuI2cBase + TXR_REG,DataAddr);
+    Writeb(CpuI2cBase + CR_REG,CR_WRITE);
+    while (Readb(CpuI2cBase + SR_REG) & SR_TIP);
+    /*Check ACK*/
+    if(Readb(CpuI2cBase + SR_REG) & SR_NOACK){
+        printf("Error:No Ack Receive!\n");
+        goto again;
+    }
+
+    /*Read Data*/
+    //Start Read Signal 0Bit=1 is Read, 0 is write.
+    Writeb(CpuI2cBase + TXR_REG,(DeviceAddr << 1) | 0x01);
+    Writeb(CpuI2cBase + CR_REG,CR_START | CR_WRITE);
+    while (Readb(CpuI2cBase + SR_REG) & SR_TIP);
+    if(Readb(CpuI2cBase + SR_REG) & SR_NOACK){
+        printf("Error:No Ack Receive!\n");
+        goto again;
+    }
+
+    //Really start to poll to grab Buffer data
+    if (Buffer == 0) {
+        printf("Error:Input parameter buffer error!!!\n");
+        return 2;
+    }
+    for(i = 0; i < DataByte; i++) {
+        Writeb(CpuI2cBase + CR_REG,((i == DataByte - 1) ? (CR_READ | CR_ACK) : CR_READ));
+        while (Readb(CpuI2cBase + SR_REG) & SR_TIP);
+        ((UINT8 *)Buffer)[i] = Readb(CpuI2cBase + RXR_REG);
+    }
 
 again:
-  /*Stop*/
-  Writeb(CpuI2cBase + CR_REG,CR_STOP);
-  Readb(CpuI2cBase + SR_REG);
-  while (Readb(CpuI2cBase + SR_REG) & SR_BUSY);
+    /*Stop*/
+    Writeb(CpuI2cBase + CR_REG,CR_STOP);
+    Readb(CpuI2cBase + SR_REG);
+    while (Readb(CpuI2cBase + SR_REG) & SR_BUSY);
 
-  return 0;
+    return 0;
 }
 
 /**
@@ -205,64 +197,64 @@ again:
 
   @retval 0                NumberOfBytes is 0.
   @retval >0               The number of bytes read from the I2c device.
-                           If this value is less than NumberOfBytes, then the read operation failed.
+  If this value is less than NumberOfBytes, then the read operation failed.
 
-**/
+ **/
 
-int
+    int
 I2cCtlWrite (
-   UINTN                                CtlAddr,
-   UINTN                                DeviceAddr,
-   UINTN                                DataAddr,
-   UINTN                                DataByte,
-   VOID                             *Buffer
-  )
+        UINTN                                CtlAddr,
+        UINTN                                DeviceAddr,
+        UINTN                                DataAddr,
+        UINTN                                DataByte,
+        VOID                             *Buffer
+        )
 {
-  UINT8   i;
-  UINTN   CpuI2cBase = CtlAddr;
+    UINT8   i;
+    UINTN   CpuI2cBase = CtlAddr;
 
-  /*Store Buffer Point*/
-  //BufferTmp = Buffer;
+    /*Store Buffer Point*/
+    //BufferTmp = Buffer;
 
-  /*Send Write Ops to Dev Addr*/
-  Writeb(CpuI2cBase + TXR_REG,DeviceAddr << 1);
-  Writeb(CpuI2cBase + CR_REG,CR_START | CR_WRITE);
-  while (Readb(CpuI2cBase + SR_REG) & SR_TIP);
-  if(Readb(CpuI2cBase + SR_REG) & SR_NOACK){
-    printf("Error:No Ack Receive!\n");
-    goto again;
-  }
-
-  /*Send Write Ops to Data Addr*/
-  Writeb(CpuI2cBase + TXR_REG,DataAddr);
-  Writeb(CpuI2cBase + CR_REG,CR_WRITE);
-  while (Readb(CpuI2cBase + SR_REG) & SR_TIP);
-  /*Check ACK*/
-  if(Readb(CpuI2cBase + SR_REG) & SR_NOACK){
-    printf("Error:No Ack Receive!\n");
-    goto again;
-  }
-
-  //Really start to poll to grab Buffer data
-  if (Buffer == 0) {
-    printf("Error:Input parameter buffer error!!!\n");
-    return 2;
-  }
-  for(i = 0; i < DataByte; i++) {
-    Writeb(CpuI2cBase + TXR_REG,*(UINT8*)Buffer);
-    Writeb(CpuI2cBase + CR_REG,CR_WRITE);
+    /*Send Write Ops to Dev Addr*/
+    Writeb(CpuI2cBase + TXR_REG,DeviceAddr << 1);
+    Writeb(CpuI2cBase + CR_REG,CR_START | CR_WRITE);
     while (Readb(CpuI2cBase + SR_REG) & SR_TIP);
     if(Readb(CpuI2cBase + SR_REG) & SR_NOACK){
-      printf("Error:No Ack Receive!\n");
-      goto again;
+        printf("Error:No Ack Receive!\n");
+        goto again;
     }
-    Buffer++;
-  }
 
-  /*Stop*/
+    /*Send Write Ops to Data Addr*/
+    Writeb(CpuI2cBase + TXR_REG,DataAddr);
+    Writeb(CpuI2cBase + CR_REG,CR_WRITE);
+    while (Readb(CpuI2cBase + SR_REG) & SR_TIP);
+    /*Check ACK*/
+    if(Readb(CpuI2cBase + SR_REG) & SR_NOACK){
+        printf("Error:No Ack Receive!\n");
+        goto again;
+    }
+
+    //Really start to poll to grab Buffer data
+    if (Buffer == 0) {
+        printf("Error:Input parameter buffer error!!!\n");
+        return 2;
+    }
+    for(i = 0; i < DataByte; i++) {
+        Writeb(CpuI2cBase + TXR_REG,*(UINT8*)Buffer);
+        Writeb(CpuI2cBase + CR_REG,CR_WRITE);
+        while (Readb(CpuI2cBase + SR_REG) & SR_TIP);
+        if(Readb(CpuI2cBase + SR_REG) & SR_NOACK){
+            printf("Error:No Ack Receive!\n");
+            goto again;
+        }
+        Buffer++;
+    }
+
+    /*Stop*/
 again:
-  Writeb(CpuI2cBase + CR_REG,CR_STOP);
-  while (Readb(CpuI2cBase + SR_REG) & SR_BUSY);
+    Writeb(CpuI2cBase + CR_REG,CR_STOP);
+    while (Readb(CpuI2cBase + SR_REG) & SR_BUSY);
 
-  return 0;
+    return 0;
 }

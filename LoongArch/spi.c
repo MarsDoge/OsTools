@@ -1,26 +1,16 @@
-#include "spi.h"
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <fcntl.h>
+#include "def.h"
 
 #define readw(addr)  (*(volatile unsigned int *)(addr))
 
 //#define  SPI_ADDR 0x1fe001f0
-#define  SPI_ADDR  0  //Get at runtime
+#define SPI_ADDR  0  //Get at runtime
+#define FLASH_SIZE 4128768
 
-DevNode SpiInstance = {
-    "spi",
-    NULL,
-    SPI_ADDR,
-    NULL,
-    NULL
-};
-typedef unsigned char           UINT8;
-typedef char           INT8;
-typedef unsigned int           UINT32;
-typedef int           INT32;
-typedef unsigned short           UINT16;
-typedef unsigned long long            UINT64;
-typedef unsigned long long            UINTN;
-typedef long long            INTN;
-typedef void            VOID;
 #define GPIO_0        (0x1<<0)
 #define GPIO_1        (0x1<<1)
 #define GPIO_2        (0x1<<2)
@@ -107,820 +97,895 @@ static UINT8 ValueRegSper  = 0xFF;
 static UINT8 ValueRegParam = 0xFF;
 UINT64 SPI_REG_BASE = 0 ;
 
-VOID
+    VOID
 SpiFlashSetCs (
-  INTN Bit
-  )
+        INTN Bit
+        )
 {
-  UINT8          Val;
+    UINT8          Val;
 
-  if (Bit)
-    Val = 0x11;
-  else
-    Val = 0x01;
-  REGSET(CSCCHIPERASET,Val);
+    if (Bit)
+        Val = 0x11;
+    else
+        Val = 0x01;
+    REGSET(CSCCHIPERASET,Val);
 
-  SpiFlashDelayUs (3);
+    SpiFlashDelayUs (3);
 }
 
 VOID ResetSfcParamReg()
 {
-  REGSET(REG_PARAM,0x47);
+    REGSET(REG_PARAM,0x47);
 }
 
-UINT8
+    UINT8
 SpiFlashWriteByteCmd (
-  UINT8 Value
-  )
+        UINT8 Value
+        )
 {
-  UINT8 Ret;
-  INT32 TimeOut = 100000;
+    UINT8 Ret;
+    INT32 TimeOut = 100000;
 
-  REGSET (REG_SPDR, Value);
-  while ((REGGET(REG_SPSR) & 0x01) && TimeOut--);
-  Ret = REGGET(REG_SPDR);
-  if (TimeOut < 0)
-    while(1);
+    REGSET (REG_SPDR, Value);
+    while ((REGGET(REG_SPSR) & 0x01) && TimeOut--);
+    Ret = REGGET(REG_SPDR);
+    if (TimeOut < 0)
+        while(1);
 
-  return Ret;
+    return Ret;
 }
 
-UINT8
+    UINT8
 SpiFlashReadByteCmd (
-  VOID
-  )
+        VOID
+        )
 {
-  return SpiFlashWriteByteCmd(0x00);
+    return SpiFlashWriteByteCmd(0x00);
 }
 
-VOID
+    VOID
 SpiFlashInit (
-  VOID
-  )
+        VOID
+        )
 {
-  if (ValueRegSpcr == 0xFF) {
-    ValueRegSpcr = REGGET(REG_SPCR);
-  }
-  if (ValueRegSpsr == 0xFF) {
-    ValueRegSpsr = REGGET(REG_SPSR);
-  }
-  if (ValueRegSper == 0xFF) {
-    ValueRegSper = REGGET(REG_SPER);
-  }
-  if (ValueRegParam == 0xFF) {
-    ValueRegParam = REGGET(REG_PARAM);
-  }
+    if (ValueRegSpcr == 0xFF) {
+        ValueRegSpcr = REGGET(REG_SPCR);
+    }
+    if (ValueRegSpsr == 0xFF) {
+        ValueRegSpsr = REGGET(REG_SPSR);
+    }
+    if (ValueRegSper == 0xFF) {
+        ValueRegSper = REGGET(REG_SPER);
+    }
+    if (ValueRegParam == 0xFF) {
+        ValueRegParam = REGGET(REG_PARAM);
+    }
 
-  //[spre:spr] [01:00] means clk_div=8
-  REGSET(REG_SPCR, 0x52);//[1:0] [0:0]spr
-  REGSET(REG_SPSR, 0xc0);
-  REGSET(REG_SPER, 0x04);//[1:0] [0:1]spre
-  REGSET(REG_PARAM, 0x20);
-  REGSET(REG_TIME, 0x01);
+    //[spre:spr] [01:00] means clk_div=8
+    REGSET(REG_SPCR, 0x52);//[1:0] [0:0]spr
+    REGSET(REG_SPSR, 0xc0);
+    REGSET(REG_SPER, 0x04);//[1:0] [0:1]spre
+    REGSET(REG_PARAM, 0x20);
+    REGSET(REG_TIME, 0x01);
 }
 
-VOID
+    VOID
 SpiFlashReset (
-  VOID
-  )
+        VOID
+        )
 {
 
-  REGSET(REG_SPCR, ValueRegSpcr);
-  REGSET(REG_SPSR, ValueRegSpsr);
-  REGSET(REG_SPER, ValueRegSper);
-  REGSET(REG_PARAM, ValueRegParam);
+    REGSET(REG_SPCR, ValueRegSpcr);
+    REGSET(REG_SPSR, ValueRegSpsr);
+    REGSET(REG_SPER, ValueRegSper);
+    REGSET(REG_PARAM, ValueRegParam);
 
-  ValueRegSpcr  = 0xFF;
-  ValueRegSpsr  = 0xFF;
-  ValueRegSper  = 0xFF;
-  ValueRegParam = 0xFF;
+    ValueRegSpcr  = 0xFF;
+    ValueRegSpsr  = 0xFF;
+    ValueRegSper  = 0xFF;
+    ValueRegParam = 0xFF;
 }
 
 UINT8 SpiFlashReadStatus(VOID)
 {
-  UINT8 Val;
+    UINT8 Val;
 
-  REGSET(REG_SOFTCS,0x01);
-  SpiFlashWriteByteCmd(RDSR);
-  Val = SpiFlashReadByteCmd();
-  REGSET(REG_SOFTCS,0x11);
+    REGSET(REG_SOFTCS,0x01);
+    SpiFlashWriteByteCmd(RDSR);
+    Val = SpiFlashReadByteCmd();
+    REGSET(REG_SOFTCS,0x11);
 
-  return Val;
+    return Val;
 }
 
-UINTN
+    UINTN
 SpiFlashWait (
-  VOID
-  )
+        VOID
+        )
 {
-  UINTN Ret;
-  INT32 TimeOut = 100000;
-  INT32 Count = 5;
-  do {
-    Ret = SpiFlashReadStatus();
-    if (TimeOut == 0)
-    {
-      Count--;
-      if (Count < 0 )
-        while(1);
-      TimeOut = 100000;
-      SpiFlashDelayUs(2);
-      printf("TimeOut Count is %d, Status Reg=0x%x\n",Count,Ret);
-    }
-  } while ((Ret & 1) && TimeOut--);
+    UINTN Ret;
+    INT32 TimeOut = 100000;
+    INT32 Count = 5;
+    do {
+        Ret = SpiFlashReadStatus();
+        if (TimeOut == 0)
+        {
+            Count--;
+            if (Count < 0 )
+                while(1);
+            TimeOut = 100000;
+            SpiFlashDelayUs(2);
+            printf("TimeOut Count is %d, Status Reg=0x%x\n",Count,Ret);
+        }
+    } while ((Ret & 1) && TimeOut--);
 
-  return Ret;
+    return Ret;
 }
 
 VOID SpiFlashRDID(UINT8 *Manu,UINT8 *Device,UINT8 *Capa)
 {
-  SpiFlashWait();
+    SpiFlashWait();
 
-  REGSET(REG_SOFTCS,0x01);
-  SpiFlashWriteByteCmd(0x9f);
+    REGSET(REG_SOFTCS,0x01);
+    SpiFlashWriteByteCmd(0x9f);
 
-  *Manu = SpiFlashReadByteCmd();
-  //Dbgprintf(DEBUG_INFO,"Manufacturer's ID:0x%x\n",*Manu);
+    *Manu = SpiFlashReadByteCmd();
+    //Dbgprintf(DEBUG_INFO,"Manufacturer's ID:0x%x\n",*Manu);
 
-  *Device = SpiFlashReadByteCmd();
-  //Dbgprintf(DEBUG_INFO,"Device ID-memory_type:0x%x\n",*Device);
+    *Device = SpiFlashReadByteCmd();
+    //Dbgprintf(DEBUG_INFO,"Device ID-memory_type:0x%x\n",*Device);
 
-  *Capa = SpiFlashReadByteCmd();
-  //Dbgprintf(DEBUG_INFO,"Device ID-memory_capacity:0x%x\n",*Capa);
+    *Capa = SpiFlashReadByteCmd();
+    //Dbgprintf(DEBUG_INFO,"Device ID-memory_capacity:0x%x\n",*Capa);
 
-  REGSET(REG_SOFTCS,0x11);
+    REGSET(REG_SOFTCS,0x11);
 }
 
 VOID SpiFlashWriteEnable(VOID)
 {
-  SpiFlashWait();
-  REGSET(REG_SOFTCS,0x01);
-  SpiFlashWriteByteCmd(WREN);
-  REGSET(REG_SOFTCS,0x11);
+    SpiFlashWait();
+    REGSET(REG_SOFTCS,0x01);
+    SpiFlashWriteByteCmd(WREN);
+    REGSET(REG_SOFTCS,0x11);
 }
 
 VOID SpiFlashEWRS(VOID)
 {
-  SpiFlashWait();
-  REGSET(REG_SOFTCS,0x01);
-  SpiFlashWriteByteCmd(EWSR);
-  REGSET(REG_SOFTCS,0x11);
+    SpiFlashWait();
+    REGSET(REG_SOFTCS,0x01);
+    SpiFlashWriteByteCmd(EWSR);
+    REGSET(REG_SOFTCS,0x11);
 }
 
 VOID SpiFlashWriteDisable(VOID)
 {
-  SpiFlashWait();
-  REGSET(REG_SOFTCS,0x01);
-  SpiFlashWriteByteCmd(WRDI);
-  REGSET(REG_SOFTCS,0x11);
+    SpiFlashWait();
+    REGSET(REG_SOFTCS,0x01);
+    SpiFlashWriteByteCmd(WRDI);
+    REGSET(REG_SOFTCS,0x11);
 }
 
 VOID SpiFlashWriteStatus(UINT8 Val)
 {
-  SpiFlashEWRS();
-  REGSET(REG_SOFTCS,0x01);
-  SpiFlashWriteByteCmd(WRSR);
-  SpiFlashWriteByteCmd(Val);
-  REGSET(REG_SOFTCS,0x11);
+    SpiFlashEWRS();
+    REGSET(REG_SOFTCS,0x01);
+    SpiFlashWriteByteCmd(WRSR);
+    SpiFlashWriteByteCmd(Val);
+    REGSET(REG_SOFTCS,0x11);
 
-  SpiFlashWriteDisable();
+    SpiFlashWriteDisable();
 }
 
-VOID
+    VOID
 SpiFlashDisableWriteProtection (
-  VOID
-  )
+        VOID
+        )
 {
 
-  UINT8 Val;
+    UINT8 Val;
 
-  Val = SpiFlashWait ();
-  Val &= ~(BP0 | BP1 | BP2);
-  SpiFlashWriteStatus(Val);
-  SpiFlashWait ();
+    Val = SpiFlashWait ();
+    Val &= ~(BP0 | BP1 | BP2);
+    SpiFlashWriteStatus(Val);
+    SpiFlashWait ();
 
 #if ENABLE_WRITE_PROTECTION
-  /*some flash not support 0x50 need the follow code*/
-  SpiFlashSetCs (0);
-  SpiFlashWriteByteCmd (WREN);
-  SpiFlashSetCs (1);
-  SpiFlashSetCs (0);
-  SpiFlashWriteByteCmd (WRSR);
-  SpiFlashWriteByteCmd (Val);
-  SpiFlashSetCs (1);
-  SpiFlashWait ();
-  SpiFlashSetCs (0);
-  SpiFlashWriteByteCmd (WREN);
-  SpiFlashSetCs (1);
+    /*some flash not support 0x50 need the follow code*/
+    SpiFlashSetCs (0);
+    SpiFlashWriteByteCmd (WREN);
+    SpiFlashSetCs (1);
+    SpiFlashSetCs (0);
+    SpiFlashWriteByteCmd (WRSR);
+    SpiFlashWriteByteCmd (Val);
+    SpiFlashSetCs (1);
+    SpiFlashWait ();
+    SpiFlashSetCs (0);
+    SpiFlashWriteByteCmd (WREN);
+    SpiFlashSetCs (1);
 #endif
 }
 
-VOID
+    VOID
 SpiFlashEnableWriteProtection (
-  VOID
-  )
+        VOID
+        )
 {
-  UINT8 Val;
+    UINT8 Val;
 
-  Val = (BP0 | BP1 | BP2);
-  SpiFlashWriteStatus(Val);
-  SpiFlashWait ();
+    Val = (BP0 | BP1 | BP2);
+    SpiFlashWriteStatus(Val);
+    SpiFlashWait ();
 #if ENABLE_WRITE_PROTECTION
-  /*some flash not support 0x50 need the follow code*/
-  SpiFlashSetCs (0);
-  SpiFlashWriteByteCmd (WREN);
-  SpiFlashSetCs (1);
-  SpiFlashSetCs (0);
-  SpiFlashWriteByteCmd (WRSR);
-  SpiFlashWriteByteCmd (Val);
-  SpiFlashSetCs (1);
-  SpiFlashWait ();
+    /*some flash not support 0x50 need the follow code*/
+    SpiFlashSetCs (0);
+    SpiFlashWriteByteCmd (WREN);
+    SpiFlashSetCs (1);
+    SpiFlashSetCs (0);
+    SpiFlashWriteByteCmd (WRSR);
+    SpiFlashWriteByteCmd (Val);
+    SpiFlashSetCs (1);
+    SpiFlashWait ();
 
-  SpiFlashSetCs (0);
-  SpiFlashWriteByteCmd (WRDI);
-  SpiFlashSetCs (1);
-  /*wait command executed done*/
-  SpiFlashWait();
+    SpiFlashSetCs (0);
+    SpiFlashWriteByteCmd (WRDI);
+    SpiFlashSetCs (1);
+    /*wait command executed done*/
+    SpiFlashWait();
 #endif
 }
 
-VOID
+    VOID
 SpiFlashEraseBlock (
-  UINTN  Addr0,
-  UINTN  Addr1,
-  UINTN  Addr2
-  )
+        UINTN  Addr0,
+        UINTN  Addr1,
+        UINTN  Addr2
+        )
 {
-  SpiFlashSetCs (0);
-  SpiFlashWriteByteCmd (WREN);
-  SpiFlashSetCs (1);
-  SpiFlashWait();
+    SpiFlashSetCs (0);
+    SpiFlashWriteByteCmd (WREN);
+    SpiFlashSetCs (1);
+    SpiFlashWait();
 
-  SpiFlashSetCs (0);
-  SpiFlashWriteByteCmd (BLKERASE);
-  SpiFlashWriteByteCmd (Addr2);
-  SpiFlashWriteByteCmd (Addr1);
-  SpiFlashWriteByteCmd (Addr0);
-  SpiFlashSetCs (1);
+    SpiFlashSetCs (0);
+    SpiFlashWriteByteCmd (BLKERASE);
+    SpiFlashWriteByteCmd (Addr2);
+    SpiFlashWriteByteCmd (Addr1);
+    SpiFlashWriteByteCmd (Addr0);
+    SpiFlashSetCs (1);
 }
 
-VOID
+    VOID
 SpiFlashWriteByte (
-  UINTN  Addr0,
-  UINTN  Addr1,
-  UINTN  Addr2,
-  UINT8  Buf
-  )
+        UINTN  Addr0,
+        UINTN  Addr1,
+        UINTN  Addr2,
+        UINT8  Buf
+        )
 {
-  SpiFlashSetCs (0);
-  SpiFlashWriteByteCmd (WREN);
-  SpiFlashSetCs (1);
+    SpiFlashSetCs (0);
+    SpiFlashWriteByteCmd (WREN);
+    SpiFlashSetCs (1);
 
-  SpiFlashSetCs (0);
-  SpiFlashWriteByteCmd (BYTE_WRITE);
-  SpiFlashWriteByteCmd (Addr2);
-  SpiFlashWriteByteCmd (Addr1);
-  SpiFlashWriteByteCmd (Addr0);
-  SpiFlashWriteByteCmd (Buf);
-  SpiFlashSetCs (1);
-  SpiFlashWait ();
+    SpiFlashSetCs (0);
+    SpiFlashWriteByteCmd (BYTE_WRITE);
+    SpiFlashWriteByteCmd (Addr2);
+    SpiFlashWriteByteCmd (Addr1);
+    SpiFlashWriteByteCmd (Addr0);
+    SpiFlashWriteByteCmd (Buf);
+    SpiFlashSetCs (1);
+    SpiFlashWait ();
 }
 
-VOID
+    VOID
 SpiFlashSpiEraseBlocks (
-  UINTN  Off,
-  UINTN  Num
-  )
+        UINTN  Off,
+        UINTN  Num
+        )
 {
-  UINTN  Offset = Off;
-  UINTN  Addr0;
-  UINTN  Addr1;
-  UINTN  Addr2;
+    UINTN  Offset = Off;
+    UINTN  Addr0;
+    UINTN  Addr1;
+    UINTN  Addr2;
 
-  do {
-    Addr0 =  Offset & 0xff;
-    Addr1 =  (Offset >> 8) & 0xff;
-    Addr2 =  (Offset >> 16) & 0xff;
+    do {
+        Addr0 =  Offset & 0xff;
+        Addr1 =  (Offset >> 8) & 0xff;
+        Addr2 =  (Offset >> 16) & 0xff;
 
-    SpiFlashEraseBlock (Addr0, Addr1, Addr2);
+        SpiFlashEraseBlock (Addr0, Addr1, Addr2);
 
-    Offset += BLKSIZE;
-    SpiFlashWait();
-  } while (Offset < Num + Off);
+        Offset += BLKSIZE;
+        SpiFlashWait();
+    } while (Offset < Num + Off);
 }
 
-VOID
+    VOID
 SpiFlashSpiWriteBuffer (
-  UINTN    Offset,
-  VOID     *Buffer,
-  UINTN    Num
-  )
+        UINTN    Offset,
+        VOID     *Buffer,
+        UINTN    Num
+        )
 {
-  UINTN  Pos = Offset;
-  UINT8  *Buf = (UINT8 *) Buffer;
-  UINTN  Index = 0;
-  UINTN  Addr0;
-  UINTN  Addr1;
-  UINTN  Addr2;
+    UINTN  Pos = Offset;
+    UINT8  *Buf = (UINT8 *) Buffer;
+    UINTN  Index = 0;
+    UINTN  Addr0;
+    UINTN  Addr1;
+    UINTN  Addr2;
 
-  while (Index < Num) {
-    Addr0 = (Pos + Index) & 0xff;
-    Addr1 = ((Pos + Index) >> 8) & 0xff;
-    Addr2 = ((Pos + Index) >> 16) & 0xff;
+    while (Index < Num) {
+        Addr0 = (Pos + Index) & 0xff;
+        Addr1 = ((Pos + Index) >> 8) & 0xff;
+        Addr2 = ((Pos + Index) >> 16) & 0xff;
 
-    SpiFlashWriteByte (Addr0, Addr1, Addr2, Buf[Index]);
-    Index++;
-  }
+        SpiFlashWriteByte (Addr0, Addr1, Addr2, Buf[Index]);
+        Index++;
+    }
 }
 
-VOID
+    VOID
 SpiFlashEraseAndWriteBlocks (
-  UINTN      Offset,
-  VOID       *Buffer,
-  UINTN      Num
-  )
+        UINTN      Offset,
+        VOID       *Buffer,
+        UINTN      Num
+        )
 {
-  UINTN  Pos = Offset;
-  UINT8  *Buf = (UINT8 *) Buffer;
-  UINTN  Index = 0;
-  UINTN  Addr0;
-  UINTN  Addr1;
-  UINTN  Addr2;
+    UINTN  Pos = Offset;
+    UINT8  *Buf = (UINT8 *) Buffer;
+    UINTN  Index = 0;
+    UINTN  Addr0;
+    UINTN  Addr1;
+    UINTN  Addr2;
 
-  /* Erase blocks step */
-  printf("Erase   : ");
-  do {
-    if ((Pos % (4 * BLKSIZE)) == 0) {
-      printf("*");
-      fflush(stdout);
+    /* Erase blocks step */
+    printf("Erase   : ");
+    do {
+        if ((Pos % (4 * BLKSIZE)) == 0) {
+            printf("*");
+            fflush(stdout);
+        }
+        Addr0 =  Pos & 0xff;
+        Addr1 =  (Pos >> 8) & 0xff;
+        Addr2 =  (Pos >> 16) & 0xff;
+
+        SpiFlashEraseBlock (Addr0, Addr1, Addr2);
+        SpiFlashDelayUs(1);
+        Pos += BLKSIZE;
+        SpiFlashWait();
+    } while (Pos < Num + Offset);
+    printf("   Erase OK.\n");
+
+    /* Write blocks step */
+    Pos = Offset;
+    printf("Program : ");
+    while (Index < Num) {
+        if ((Index % 0x4000) == 0) {
+            printf("*");
+            fflush(stdout);
+        }
+        Addr0 = (Pos + Index) & 0xff;
+        Addr1 = ((Pos + Index) >> 8) & 0xff;
+        Addr2 = ((Pos + Index) >> 16) & 0xff;
+
+        SpiFlashWriteByte (Addr0, Addr1, Addr2, Buf[Index]);
+        Index++;
     }
-    Addr0 =  Pos & 0xff;
-    Addr1 =  (Pos >> 8) & 0xff;
-    Addr2 =  (Pos >> 16) & 0xff;
-
-    SpiFlashEraseBlock (Addr0, Addr1, Addr2);
-    SpiFlashDelayUs(1);
-    Pos += BLKSIZE;
-    SpiFlashWait();
-  } while (Pos < Num + Offset);
-  printf("   Erase OK.\n");
-
-  /* Write blocks step */
-  Pos = Offset;
-  printf("Program : ");
-  while (Index < Num) {
-    if ((Index % 0x4000) == 0) {
-      printf("*");
-      fflush(stdout);
-    }
-    Addr0 = (Pos + Index) & 0xff;
-    Addr1 = ((Pos + Index) >> 8) & 0xff;
-    Addr2 = ((Pos + Index) >> 16) & 0xff;
-
-    SpiFlashWriteByte (Addr0, Addr1, Addr2, Buf[Index]);
-    Index++;
-  }
-  printf("   Program OK.\n");
+    printf("   Program OK.\n");
 }
 
-UINTN
+    UINTN
 SpiFlashSpiReadBuffer (
-  UINTN  Offset,
-  VOID  *Buffer,
-  UINTN  Num
-  )
+        UINTN  Offset,
+        VOID  *Buffer,
+        UINTN  Num
+        )
 {
-  UINTN   Pos = Offset;
-  UINT8  *Buf = (UINT8 *) Buffer;
-  UINTN   Index;
+    UINTN   Pos = Offset;
+    UINT8  *Buf = (UINT8 *) Buffer;
+    UINTN   Index;
 
-  SpiFlashSetCs (0);
-  SpiFlashWriteByteCmd (FAST_READ);
-  SpiFlashWriteByteCmd ((Pos >> 16) & 0xff);
-  SpiFlashWriteByteCmd ((Pos >> 8) & 0xff);
-  SpiFlashWriteByteCmd (Pos & 0xff);
-  SpiFlashWriteByteCmd (0);
-  for (Index = 0; Index < Num; Index++)
-    Buf[Index] = SpiFlashReadByteCmd ();
+    SpiFlashSetCs (0);
+    SpiFlashWriteByteCmd (FAST_READ);
+    SpiFlashWriteByteCmd ((Pos >> 16) & 0xff);
+    SpiFlashWriteByteCmd ((Pos >> 8) & 0xff);
+    SpiFlashWriteByteCmd (Pos & 0xff);
+    SpiFlashWriteByteCmd (0);
+    for (Index = 0; Index < Num; Index++)
+        Buf[Index] = SpiFlashReadByteCmd ();
 
-  SpiFlashSetCs (1);
+    SpiFlashSetCs (1);
 
-  return Index;
+    return Index;
 }
 
-UINTN
+    UINTN
 GetLs7ASpiRegBaseAddr(
-  VOID
-  )
+        VOID
+        )
 {
-  UINTN BaseAddr;
+    UINTN BaseAddr;
 
-  BaseAddr = *(volatile UINT32 *)(0x90000efdfe000010 | (22 << 11));
-  BaseAddr &= 0xfffffff0;
-  BaseAddr |=0x9000000000000000;
+    BaseAddr = *(volatile UINT32 *)(0x90000efdfe000010 | (22 << 11));
+    BaseAddr &= 0xfffffff0;
+    BaseAddr |=0x9000000000000000;
 
-  return BaseAddr;
+    return BaseAddr;
 }
 
-VOID
+    VOID
 SpiFlashErase (
-  UINTN      Offset,
-  UINTN      Num
-  )
+        UINTN      Offset,
+        UINTN      Num
+        )
 {
-  if((INVALID_OFFSET(Offset)) || INVALID_NUM(Num)){
-    //ASSERT(0);
-    while(1);
-  }
+    if((INVALID_OFFSET(Offset)) || INVALID_NUM(Num)){
+        //ASSERT(0);
+        while(1);
+    }
 
-  SpiFlashInit ();
-  SpiFlashDisableWriteProtection ();
-  SpiFlashSpiEraseBlocks (Offset, Num);
-  SpiFlashEnableWriteProtection ();
-  SpiFlashReset ();
-  ResetSfcParamReg();
+    SpiFlashInit ();
+    SpiFlashDisableWriteProtection ();
+    SpiFlashSpiEraseBlocks (Offset, Num);
+    SpiFlashEnableWriteProtection ();
+    SpiFlashReset ();
+    ResetSfcParamReg();
 }
 
-UINTN
+    UINTN
 SpiFlashRead (
-  UINTN      Offset,
-  VOID       *Buffer,
-  UINTN      Num
-  )
+        UINTN      Offset,
+        VOID       *Buffer,
+        UINTN      Num
+        )
 {
-  UINTN Ret;
+    UINTN Ret;
 
-  if(!Buffer ||(INVALID_OFFSET(Offset)) || INVALID_NUM(Num)){
-    //ASSERT(0);
-    while(1);
-  }
+    if(!Buffer ||(INVALID_OFFSET(Offset)) || INVALID_NUM(Num)){
+        //ASSERT(0);
+        while(1);
+    }
 
-  SpiFlashInit ();
-  Ret = SpiFlashSpiReadBuffer (Offset, Buffer, Num);
-  SpiFlashReset ();
-  ResetSfcParamReg();
+    SpiFlashInit ();
+    Ret = SpiFlashSpiReadBuffer (Offset, Buffer, Num);
+    SpiFlashReset ();
+    ResetSfcParamReg();
 
-  return Ret;
+    return Ret;
 }
 
-VOID
+    VOID
 SpiFlashWrite (
-  UINTN        Offset,
-  VOID         *Buffer,
-  UINTN        Num
-  )
+        UINTN        Offset,
+        VOID         *Buffer,
+        UINTN        Num
+        )
 {
-  if(!Buffer ||(INVALID_OFFSET(Offset)) || INVALID_NUM(Num)){
-    //ASSERT(0);
-    while(1);
-  }
+    if(!Buffer ||(INVALID_OFFSET(Offset)) || INVALID_NUM(Num)){
+        //ASSERT(0);
+        while(1);
+    }
 
-  SpiFlashInit ();
-  SpiFlashDisableWriteProtection ();
-  SpiFlashSpiWriteBuffer (Offset, Buffer, Num);
-  SpiFlashEnableWriteProtection ();
-  SpiFlashReset ();
-  ResetSfcParamReg();
+    SpiFlashInit ();
+    SpiFlashDisableWriteProtection ();
+    SpiFlashSpiWriteBuffer (Offset, Buffer, Num);
+    SpiFlashEnableWriteProtection ();
+    SpiFlashReset ();
+    ResetSfcParamReg();
 }
 
-VOID
+    VOID
 UpdateBiosInSpiFlash (
-  UINTN      Offset,
-  VOID       *Buffer,
-  UINTN      Num
-  )
+        UINTN      Offset,
+        VOID       *Buffer,
+        UINTN      Num
+        )
 {
-  if(!Buffer ||(INVALID_OFFSET(Offset)) || INVALID_NUM(Num)){
-    //ASSERT(0);
-    while(1);
-  }
+    if(!Buffer ||(INVALID_OFFSET(Offset)) || INVALID_NUM(Num)){
+        //ASSERT(0);
+        while(1);
+    }
 #if 0
-  UINT16 PllRegVal = Read16(LS3APROC_PLL_REG);
-  Write16(LS3APROC_PLL_REG, (0x7777 ^ (1 << ((BOOTCORE_ID << 2) + 3))) & PllRegVal);//shutdown slave core
-  UINTN MiscRegVal = Read64(LS3APROC_MISC_REG);
-  if (MiscRegVal & (1 << 8))
-    Write64(LS3APROC_MISC_REG, (~(1 << 8)) & MiscRegVal);//shutdown 132
+    UINT16 PllRegVal = Read16(LS3APROC_PLL_REG);
+    Write16(LS3APROC_PLL_REG, (0x7777 ^ (1 << ((BOOTCORE_ID << 2) + 3))) & PllRegVal);//shutdown slave core
+    UINTN MiscRegVal = Read64(LS3APROC_MISC_REG);
+    if (MiscRegVal & (1 << 8))
+        Write64(LS3APROC_MISC_REG, (~(1 << 8)) & MiscRegVal);//shutdown 132
 #endif
 
-  SpiFlashInit ();
-  SpiFlashDisableWriteProtection ();
-  SpiFlashEraseAndWriteBlocks (Offset, Buffer, Num);
-  SpiFlashEnableWriteProtection ();
-  SpiFlashReset ();
-  ResetSfcParamReg();
+    SpiFlashInit ();
+    SpiFlashDisableWriteProtection ();
+    SpiFlashEraseAndWriteBlocks (Offset, Buffer, Num);
+    SpiFlashEnableWriteProtection ();
+    SpiFlashReset ();
+    ResetSfcParamReg();
 
 
 #if 0
 
-  Write16(LS3APROC_PLL_REG, PllRegVal);
-  if (MiscRegVal & (1 << 8))
-    Write64(LS3APROC_MISC_REG, MiscRegVal);
+    Write16(LS3APROC_PLL_REG, PllRegVal);
+    if (MiscRegVal & (1 << 8))
+        Write64(LS3APROC_MISC_REG, MiscRegVal);
 #endif
 }
 
-VOID
+    VOID
 SpiFlashSafeWrite (
-  UINTN        Offset,
-  VOID         *Buffer,
-  UINTN        Num
-  )
+        UINTN        Offset,
+        VOID         *Buffer,
+        UINTN        Num
+        )
 {
-  UINT64 SectorStart;
-  UINT64 SectorNum;
-  UINT8  *Buff;
+    UINT64 SectorStart;
+    UINT64 SectorNum;
+    UINT8  *Buff;
 
-  if(!Buffer ||(INVALID_OFFSET(Offset)) || INVALID_NUM(Num)){
-    //ASSERT(0);
-    while(1);
-  }
+    if(!Buffer ||(INVALID_OFFSET(Offset)) || INVALID_NUM(Num)){
+        //ASSERT(0);
+        while(1);
+    }
 
-  SectorStart = Offset / BLKSIZE;
-  SectorNum   = ((Offset + Num - 1) / BLKSIZE) - (Offset / BLKSIZE) + 1;
+    SectorStart = Offset / BLKSIZE;
+    SectorNum   = ((Offset + Num - 1) / BLKSIZE) - (Offset / BLKSIZE) + 1;
 
-  Buff = malloc(SectorNum*BLKSIZE);
+    Buff = malloc(SectorNum*BLKSIZE);
 
-  if(!Buff){
-    //ASSERT(0);
-    while(1);
-  }
+    if(!Buff){
+        //ASSERT(0);
+        while(1);
+    }
 
-  SpiFlashRead(SectorStart*BLKSIZE,Buff,SectorNum*BLKSIZE);
-  memcpy(&Buff[Offset%BLKSIZE],Buffer,Num);
-  SpiFlashErase(Offset,Num);
-  SpiFlashWrite(SectorStart*BLKSIZE,Buff,SectorNum*BLKSIZE);
-  free(Buff);
+    SpiFlashRead(SectorStart*BLKSIZE,Buff,SectorNum*BLKSIZE);
+    memcpy(&Buff[Offset%BLKSIZE],Buffer,Num);
+    SpiFlashErase(Offset,Num);
+    SpiFlashWrite(SectorStart*BLKSIZE,Buff,SectorNum*BLKSIZE);
+    free(Buff);
 }
-
-void FlashUpdateOps(DevNode *this,int fd)
-{
-	void * p = NULL;
-  int status ;
-  unsigned int spcr = 0;
-  unsigned int spsr = 0;
-  unsigned int sper = 0;
-  unsigned int param = 0;
-
-  this->devaddr = 0x1fe001f0;
-
-  /*Transfer Virtul to Phy Addr*/
-  p = vtpa(this->devaddr,fd);
-  SPI_REG_BASE = (UINTN)p;
-
-  void *buf = malloc(1024*1024*4);
-
-  printf("Please Input File Name: ");
-  //char RecordName[30] = "LS3A50007A.fd";
-  char RecordName[30] = {0};
-  status = scanf("%s",RecordName);
-  size_t RecordSize = strlen(RecordName);
-
-  FILE *pfile = fopen(RecordName,"r");
-  if (pfile==NULL) {
-    printf("Read File Error , PATH error!!!\n");
-    return 1;
-  }
-  fread(buf,1024*1024*4,1,pfile);
-  printf("------------Read Buf Get Success!-----------\n");
-
-  UpdateBiosInSpiFlash(0,buf,1024*1024*4);
-
-  int tmp = 0;
-  //tmp = readw(p); shutdown slave core and 132
-  printf("%lx\n",tmp);
-
-	status = releaseMem(p);
-}
-
-void* parse_mac(char *szMacStr);
-void GmacUpdateOps(DevNode *this,int fd)
-{
-	void * p = NULL;
-  int status ;
-  unsigned int spcr = 0;
-  unsigned int spsr = 0;
-  unsigned int sper = 0;
-  unsigned int param = 0;
-  unsigned long long c = 0;
-  char RecordName[100];
-
-  printf("Please Input Pci's Spi Control Address (obtained through Pci Access): ");
-  status = scanf("%s",RecordName);
-  sscanf (RecordName,"%lx",&c);
-  //c = atoi(RecordName);
-
-  //write spi control Address
-  this->devaddr = c;
-
-  /*Transfer Virtul to Phy Addr*/
-  p = vtpa(this->devaddr,fd);
-  SPI_REG_BASE = (UINTN)p & 0xfffffffffffffff0ULL;
-
-  //void *buf = malloc(1024*1024*4);
-    unsigned char *buf3 = NULL;
-
-  //char RecordName[30] = {0};
-  int q = 0;
-  for(q = 0; q<29; q++){
-    RecordName[q] = 0;
-  }
-  printf("Please Input Gmac id: ");
-
-  char buf[6][20] = {0};
-    unsigned char bufint[7] = {0};
-
-    int j = 0;
-    int k = 0;
-    int i = 0;
-  //GmacUpdateOps
-  c = 0;
-  status = scanf("%s",RecordName);
-  c = atoi(RecordName);
-  printf("\n");
-  if (c == 0){
-    printf("Example Mac burn addr: 11:22:33:44:55:66 !!!\n");
-    printf("Please Input Mac%d burn addr,Use (:) separate:",c);
-    status = scanf("%s",RecordName);
-    
-    //parse mac string
-    buf3 = parse_mac(RecordName);
-    memcpy(bufint,buf3,6);
-
-    SpiFlashSafeWrite(0,bufint,6);
-  } else if (c == 1){
-    printf("Example Mac burn addr: 11:22:33:44:55:66 !!!\n");
-    printf("Please Input Mac%d burn addr,Use (:) separate:",c);
-    status = scanf("%s",RecordName);
-    
-    //parse mac string
-    buf3 = parse_mac(RecordName);
-    memcpy(bufint,buf3,6);
-    
-    SpiFlashSafeWrite(0x10,bufint,6);
-  } else {
-  printf("------------ID Error!!!-----------\n");
-  return ;
-  }
-  printf("------------ok mac-----------\n");
- // char buf1[3] = {0x11,0x22,0x33};
- // UpdateBiosInSpiFlash(0,buf1,2);
-
-	status = releaseMem(p);
-}
-
 
 UINTN
 SpiTcmRead (
-  UINTN      Offset,
-  VOID       *Buffer,
-  UINTN      Num
-  // UINTN      BaseRegAddr
-  )
+        UINTN      Offset,
+        VOID       *Buffer,
+        UINTN      Num
+        // UINTN      BaseRegAddr
+        )
 {
-  // UINTN Ret;
-  UINTN      addr=Offset;
-  UINTN      count=0;
-  UINT8      data[4]={0};
+    // UINTN Ret;
+    UINTN      addr=Offset;
+    UINTN      count=0;
+    UINT8      data[4]={0};
 
-  if(!Buffer ||(TCM_INVALID_OFFSET(Offset)) || INVALID_NUM(Num)){
-    // ASSERT(0);
-    return 0;
-  }
-  // DEBUG((DEBUG_INFO,"func %a,BaseRegAddr=0x%lx, offset=0x%x,num=%d\n",__FUNCTION__,BaseRegAddr,Offset,Num));
-  // SpiFlashSetRegBase(BaseRegAddr);
-  SpiFlashInit ();
-  REGSET(REG_SPER, 0x01);//spre:01  mode 0
-  REGSET(REG_SOFTCS ,0x02);  //enable cs1
+    if(!Buffer ||(TCM_INVALID_OFFSET(Offset)) || INVALID_NUM(Num)){
+        // ASSERT(0);
+        return 0;
+    }
+    // DEBUG((DEBUG_INFO,"func %a,BaseRegAddr=0x%lx, offset=0x%x,num=%d\n",__FUNCTION__,BaseRegAddr,Offset,Num));
+    // SpiFlashSetRegBase(BaseRegAddr);
+    SpiFlashInit ();
+    REGSET(REG_SPER, 0x01);//spre:01  mode 0
+    REGSET(REG_SOFTCS ,0x02);  //enable cs1
 
-  // addr
-  REGSET(REG_SPDR,((addr >> 24)&0xff));
-  while(((REGGET(REG_SPSR))&SPI_BUSY) == SPI_BUSY ){
-  }
-  REGGET(REG_SPDR);
-  REGSET(REG_SPDR,((addr >> 16)&0xff));
-  while(((REGGET(REG_SPSR))&SPI_BUSY)  == SPI_BUSY ){
-  }
-  REGGET(REG_SPDR);
-  REGSET(REG_SPDR,((addr >> 8)&0xff));
-  while(((REGGET(REG_SPSR))&SPI_BUSY) == SPI_BUSY ){
-  }
-  REGGET(REG_SPDR);
-  REGSET(REG_SPDR,(addr & 0xff));
-  while(((REGGET(REG_SPSR))&SPI_BUSY) == SPI_BUSY ){
-  }
-  REGGET(REG_SPDR);// addr end
-
-  // REGSET(REG_SPDR,0x00);
-  for(count=0;count<Num;count++)
-  {
-    REGSET(REG_SPDR,0x00);
+    // addr
+    REGSET(REG_SPDR,((addr >> 24)&0xff));
+    while(((REGGET(REG_SPSR))&SPI_BUSY) == SPI_BUSY ){
+    }
+    REGGET(REG_SPDR);
+    REGSET(REG_SPDR,((addr >> 16)&0xff));
     while(((REGGET(REG_SPSR))&SPI_BUSY)  == SPI_BUSY ){
     }
-    data[count] = REGGET(REG_SPDR);
-    // printf("0x%x\n",data[count]);
-  }
-  REGSET(REG_SOFTCS ,0x22); //disable cs1
+    REGGET(REG_SPDR);
+    REGSET(REG_SPDR,((addr >> 8)&0xff));
+    while(((REGGET(REG_SPSR))&SPI_BUSY) == SPI_BUSY ){
+    }
+    REGGET(REG_SPDR);
+    REGSET(REG_SPDR,(addr & 0xff));
+    while(((REGGET(REG_SPSR))&SPI_BUSY) == SPI_BUSY ){
+    }
+    REGGET(REG_SPDR);// addr end
 
-  memcpy(Buffer,data,4);
-  SpiFlashReset ();
-  ResetSfcParamReg();
+    // REGSET(REG_SPDR,0x00);
+    for(count=0;count<Num;count++)
+    {
+        REGSET(REG_SPDR,0x00);
+        while(((REGGET(REG_SPSR))&SPI_BUSY)  == SPI_BUSY ){
+        }
+        data[count] = REGGET(REG_SPDR);
+        // printf("0x%x\n",data[count]);
+    }
+    REGSET(REG_SOFTCS, 0x22); //disable cs1
 
-  return 0;
+    memcpy(Buffer,data,4);
+    SpiFlashReset ();
+    ResetSfcParamReg();
+
+    return 0;
 }
-void ReadTcmOps(DevNode *this,int fd)
+
+static int spi_read_tcm (const char* addr)
 {
-	void * p = NULL;
-  int status ;
-  unsigned int spcr = 0;
-  unsigned int spsr = 0;
-  unsigned int sper = 0;
-  unsigned int param = 0;
-  unsigned long long c = 0;
-  char RecordName[100];
-  unsigned char *Buffer=NULL;
-  int i=0;
+    void * p = NULL;
+    int status ;
+    unsigned long long devaddr;
+    unsigned long long c = 0;
+    unsigned char *Buffer=NULL;
+    int i=0;
 
-  printf("Please Input Pci's Spi Control Address (obtained through Pci Access): ");
-  status = scanf("%s",RecordName);
-  sscanf (RecordName,"%lx",&c);
-  //c = atoi(RecordName);
+    sscanf (addr, "%lx",&c);
+    devaddr = c;
 
-  //write spi control Address
-  this->devaddr = c;
+    int fd = open("/dev/mem", O_RDWR|O_SYNC);
+    if (fd < 0) {
+        printf("can't open file,please use root .\n");
+        return 1;
+    }
 
-  /*Transfer Virtul to Phy Addr*/
-  p = vtpa(this->devaddr,fd);
-  SPI_REG_BASE = (UINTN)p & 0xfffffffffffffff0ULL;
+    /*Transfer Virtul to Phy Addr*/
+    p = vtpa(devaddr, fd);
+    SPI_REG_BASE = (UINTN)p & 0xfffffffffffffff0ULL;
 
-  Buffer=malloc(4);
-  printf("\n");
-  SpiTcmRead (0x80d40000,Buffer,1);
-  printf("Tcm locallity 0 access:0x%x\n",Buffer[0]);
+    Buffer=malloc(4);
+    printf("\n");
+    SpiTcmRead (0x80d40000, Buffer, 1);
+    printf("Tcm locallity 0 access:0x%x\n",Buffer[0]);
 
-  printf("Tcm Vendor and device ID :");
-  for(i=0;i<4;i++)
-  {
-    SpiTcmRead (0x80d40f00+i,Buffer,1);
-    printf("%02x",Buffer[0]);
-  }
-  printf("\n");
+    printf("Tcm Vendor and device ID :");
+    for(i=0;i<4;i++)
+    {
+        SpiTcmRead (0x80d40f00+i,Buffer,1);
+        printf("%02x",Buffer[0]);
+    }
+    printf("\n");
 
-  free(Buffer);
-	status = releaseMem(p);
+    free(Buffer);
+    status = releaseMem(p);
+    return status;
 }
-void ReadSpiOps(DevNode *this,int fd)
+
+/**
+ * spi_update_gmac:
+ * @addr: 
+ * @id: 
+ * @mac: mac addr
+ *
+ *
+ **/
+static int spi_update_gmac (const char* addr, int id, const char* mac)
 {
-	void * p = NULL;
-  int status ;
-  unsigned int spcr = 0;
-  unsigned int spsr = 0;
-  unsigned int sper = 0;
-  unsigned int param = 0;
-  unsigned long long c = 0;
-  char RecordName[100];
-  // unsigned int Buffer=0;
-  unsigned char *Buffer=NULL;
+    void * p = NULL;
+    int status ;
+    unsigned int spcr = 0;
+    unsigned int spsr = 0;
+    unsigned int sper = 0;
+    unsigned int param = 0;
+    unsigned long long c = 0;
+    unsigned long long devaddr;
+    char RecordName[100];
 
-  printf("Please Input Pci's Spi Control Address (obtained through Pci Access): ");
-  status = scanf("%s",RecordName);
-  sscanf (RecordName,"%lx",&c);
-  //c = atoi(RecordName);
+    sscanf (addr, "%lx", &c);
+    devaddr = c;
 
-  //write spi control Address
-  this->devaddr = c;
+    int fd = open ("/dev/mem", O_RDWR|O_SYNC);
+    if (fd < 0) {
+        printf("can't open file,please use root .\n");
+        return 1;
+    }
 
-  /*Transfer Virtul to Phy Addr*/
-  p = vtpa(this->devaddr,fd);
-  SPI_REG_BASE = (UINTN)p & 0xfffffffffffffff0ULL;
-  printf("Please Input Read Count: ");
-  c = 0;
-  status = scanf("%s",RecordName);
-  c = atoi(RecordName);
+    /*Transfer Virtul to Phy Addr*/
+    p = vtpa (devaddr, fd);
+    SPI_REG_BASE = (UINTN)p & 0xfffffffffffffff0ULL;
 
-  Buffer=malloc(c);
-  SpiFlashRead (0,Buffer,c);
-  int i=0;
-  for(i=0;i<c;i++)
-  {
-    printf("%02x ",Buffer[i]);
-    if((i+1)%16==0)
-      printf("\n");
-  }
-  printf("\n");
+    //void *buf = malloc(1024*1024*4);
+    unsigned char *buf3 = NULL;
 
-  free(Buffer);
-	status = releaseMem(p);
+    //char RecordName[30] = {0};
+    int q = 0;
+    for (q = 0; q < 29; q++) {
+        RecordName[q] = 0;
+    }
+
+    unsigned char bufint[7] = {0};
+
+    //parse mac string
+    buf3 = parse_mac (mac);
+    memcpy(bufint, buf3,6);
+
+    if (id == 0) {
+        SpiFlashSafeWrite (0, bufint, 6);
+    } else if (id == 1) {
+        SpiFlashSafeWrite (0x10, bufint, 6);
+    } else {
+        printf("------------ID Error!!!-----------\n");
+        return 1;
+    }
+
+    printf ("------------ok mac-----------\n");
+    status = releaseMem (p);
+    return status;
 }
-Cmd SpiCmd[5] = {
-  {"-u",FlashUpdateOps},
-  {"-g",GmacUpdateOps},
-  {"-tcm",ReadTcmOps},
-  {"-r",ReadSpiOps},
-  {NULL,NULL}
+
+
+static int spi_update_flash (const char *path)
+{
+    void *p = NULL;
+    int status ;
+    unsigned long long devaddr;
+
+    devaddr = 0x1fe001f0;
+
+    int fd = open ("/dev/mem", O_RDWR|O_SYNC);
+    if(fd < 0) {
+        printf("can't open file,please use root .\n");
+        return 1;
+    }
+
+    /*Transfer Virtul to Phy Addr*/
+    p = vtpa(devaddr, fd);
+    SPI_REG_BASE = (UINTN)p;
+
+    void *buf = malloc (FLASH_SIZE);
+
+    FILE *pfile = fopen(path, "r");
+    if (pfile==NULL) {
+        printf("Read File Error , PATH error!!!\n");
+        return 1;
+    }
+    fread(buf, FLASH_SIZE, 1, pfile);
+    printf("------------Read Buf Get Success!-----------\n");
+
+    UpdateBiosInSpiFlash(0, buf, FLASH_SIZE);
+
+    status = releaseMem(p);
+    close(fd);
+    return status;
+}
+
+static int spi_dump_flash (const char *path)
+{
+    void *p = NULL;
+    int status ;
+    unsigned long long devaddr;
+
+    devaddr = 0x1fe001f0;
+
+    int fd = open ("/dev/mem", O_RDWR |O_SYNC);
+    if(fd < 0) {
+        printf("can't open file,please use root .\n");
+        return 1;
+    }
+
+    /*Transfer Virtul to Phy Addr*/
+    p = vtpa (devaddr, fd);
+    SPI_REG_BASE = (UINTN)p & 0xfffffffffffffff0ULL;
+
+    void *buf = malloc (FLASH_SIZE);
+    SpiFlashRead (0, buf, FLASH_SIZE);
+
+    FILE *pfile = fopen(path, "w");
+    if (pfile==NULL) {
+        printf("Read File Error , PATH error!!!\n");
+        return 1;
+    }
+
+    fwrite (buf, 1, 4128768, pfile);
+    fflush (pfile);
+    fclose (pfile);
+    free (buf);
+
+    status = releaseMem(p);
+    close(fd);
+    return status;
+}
+
+static int spi_read_flash (const char* addr, int count)
+{
+    void * p = NULL;
+    int status ;
+    unsigned long long c = 0;
+    unsigned long long devaddr;
+    unsigned char *Buffer = NULL;
+
+    sscanf (addr, "%lx", &c);
+
+    devaddr = c;
+
+    int fd = open("/dev/mem", O_RDWR|O_SYNC);
+    if (fd < 0) {
+        printf("can't open file,please use root .\n");
+        return 1;
+    }
+
+    /*Transfer Virtul to Phy Addr*/
+    p = vtpa (devaddr, fd);
+    SPI_REG_BASE = (UINTN)p & 0xfffffffffffffff0ULL;
+
+    Buffer = malloc (count);
+    SpiFlashRead (0, Buffer, count);
+    hexdump (0, Buffer, count);
+
+    free(Buffer);
+    status = releaseMem(p);
+    close(fd);
+    return status;
+}
+
+static const char *const spi_usages[] = {
+    PROGRAM_NAME" spi <args>",
+    NULL,
 };
 
-void SpiInitInstance(void)
+int cmd_spi (int argc, const char **argv)
 {
-   SpiInstance.CmdInstance = SpiCmd;
-   DevInstanceInsert(&SpiInstance);
-}
+    int flag_read = 0;
+    int flag_update = 0;
+    int flag_dump = 0;
+    int flag_gmac = 0;
+    int flag_tcm = 0;
+    int count = 0;
+    int id = 0;
+    const char *file = NULL;
+    const char *addr = NULL;
+    const char *mac = NULL;
+    uid_t uid;
+    struct argparse argparse;
 
+    struct argparse_option options[] = {
+        OPT_HELP (),
+        OPT_GROUP ("Options:"),
+        OPT_BOOLEAN ('r', "read", &flag_read, "read ls7a spi from address", NULL, 0, 0),
+        OPT_BOOLEAN ('u', "update", &flag_update, "update ls3a spi flash", NULL, 0, 0),
+        OPT_BOOLEAN ('d', "dump", &flag_dump, "dump the ls3a spi flash", NULL, 0, 0),
+        OPT_BOOLEAN ('g', "gmac", &flag_gmac, "update gmac flash", NULL, 0, 0),
+        OPT_BOOLEAN ('t', "tcm", &flag_tcm, "read ls7a tcm from address", NULL, 0, 0),
+        OPT_GROUP ("Arguments:"),
+        OPT_STRING  ('f', "file", &file, "file path to read/write", NULL, 0, 0),
+        OPT_STRING  ('a', "address", &addr, "Pci's spi control address(e.g. 1fe001f0)", NULL, 0, 0),
+        OPT_INTEGER ('i', "id", &id, "Mac id", NULL, 0, 0),
+        OPT_STRING  ('m', "mac", &mac, "Mac address(e.g. 00:11:22:33:44:55)", NULL, 0, 0),
+        OPT_INTEGER ('c', "count", &count, "read count", NULL, 0, 0),
+        OPT_END (),
+    };
+
+    argparse_init (&argparse, options, spi_usages, 0);
+    argc = argparse_parse (&argparse, argc, argv);
+
+    if (!(flag_update || flag_dump || flag_read || flag_tcm)) {
+        argparse_usage(&argparse);
+        return 1;
+    }
+
+    uid = geteuid ();
+    if (uid != 0) {
+        printf ("Please run with root!\n");
+        return -1;
+    }
+
+    if (flag_update) {
+        if (file == NULL) {
+            printf ("Please setup the file.\n");
+            return 1;
+        }
+        spi_update_flash (file);
+    } else if (flag_dump) {
+        if (file == NULL) {
+            printf ("Please setup the file.\n");
+            return 1;
+        }
+        spi_dump_flash (file);
+    } else if (flag_read) {
+        if (addr == NULL) {
+            printf ("Please setup the address.\n");
+            return 1;
+        }
+        if (count == 0) {
+            printf ("Please setup the count.\n");
+            return 1;
+        }
+        spi_read_flash (addr, count);
+    } else if (flag_tcm) {
+        if (addr == NULL) {
+            printf ("Please setup the address.\n");
+            return 1;
+        }
+        spi_read_tcm (addr);
+    }
+    return 0;
+}
