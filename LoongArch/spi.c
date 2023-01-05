@@ -4,6 +4,7 @@
 #include <string.h>
 #include <fcntl.h>
 #include "def.h"
+#include "file.h"
 
 #define readw(addr)  (*(volatile unsigned int *)(addr))
 
@@ -96,6 +97,8 @@ static UINT8 ValueRegSpsr  = 0xFF;
 static UINT8 ValueRegSper  = 0xFF;
 static UINT8 ValueRegParam = 0xFF;
 UINT64 SPI_REG_BASE = 0 ;
+int is3c = 0;
+int debug_1 = 1;
 
     VOID
 SpiFlashSetCs (
@@ -143,6 +146,25 @@ SpiFlashReadByteCmd (
     return SpiFlashWriteByteCmd(0x00);
 }
 
+VOID
+Fopen_File (
+  char *Path, char *Str
+  )
+{
+ char Ch;
+ FILE *fp;
+ int i = 0;
+
+ fp=fopen(Path,"r");
+ while ((Ch=fgetc(fp)) != EOF)
+ {
+   Str[i] = Ch;
+   i++;
+ }
+// printf("Cpu_Tame:%s", Str);
+// printf("Cpu_Type0:%s", Cpu_Type[0]);
+}
+
     VOID
 SpiFlashInit (
         VOID
@@ -161,12 +183,24 @@ SpiFlashInit (
         ValueRegParam = REGGET(REG_PARAM);
     }
 
-    //[spre:spr] [01:00] means clk_div=8
-    REGSET(REG_SPCR, 0x52);//[1:0] [0:0]spr
-    REGSET(REG_SPSR, 0xc0);
-    REGSET(REG_SPER, 0x04);//[1:0] [0:1]spre
-    REGSET(REG_PARAM, 0x20);
-    REGSET(REG_TIME, 0x01);
+    if (is3c) {
+      if (debug_1) {
+        printf("Because it is 3C5000, it will be speed down! \n");
+        debug_1 = 0;
+      }
+      //[spre:spr] [01:00] means clk_div=8
+      REGSET(REG_SPCR, 0x52);//[1:0] [0:0]spr
+      REGSET(REG_SPSR, 0xc0);
+      REGSET(REG_SPER, 0x04);//[1:0] [0:1]spre
+      REGSET(REG_PARAM, 0x20);
+      REGSET(REG_TIME, 0x01); //1/16
+    } else {
+      REGSET(REG_SPCR, 0x50);//[1:0] [0:0]spr
+      REGSET(REG_SPSR, 0xc0);
+      REGSET(REG_SPER, 0x05);//[1:0] [0:1]spre
+      REGSET(REG_PARAM, 0x40);
+      REGSET(REG_TIME, 0x01); //1/8
+    }
 }
 
     VOID
@@ -963,6 +997,12 @@ int cmd_spi (int argc, const char **argv)
             printf ("Please setup the file.\n");
             return 1;
         }
+        // Get Cpu Name to distinguish
+        char *Path="./"FILE_NAME_1;
+        char Cpu_Name[100];
+        Fopen_File(Path, Cpu_Name);
+        is3c = !strncmp("Loongson-3C5000", Cpu_Name, 15);
+
         spi_update_flash (file);
     } else if (flag_dump) {
         if (file == NULL) {

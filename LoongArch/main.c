@@ -1,7 +1,9 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include "def.h"
 #include "argparse.h"
+#include "file.h"
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0]))
 
@@ -53,6 +55,9 @@ int main (int argc, const char *argv[])
         argparse_usage(&argparse);
         return -1;
     }
+
+    /*create file: cpu_name*/
+    system("cat /proc/cpuinfo | grep 'model name' | awk 'NR==1 {print $4}' > "FILE_NAME_1);
 
     /* Try to run command with args provided. */
     struct cmd_struct *cmd = NULL;
