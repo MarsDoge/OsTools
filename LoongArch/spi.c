@@ -5,6 +5,7 @@
 #include <fcntl.h>
 #include "def.h"
 #include "file.h"
+#include "process.h"
 
 #define readw(addr)  (*(volatile unsigned int *)(addr))
 
@@ -472,10 +473,12 @@ SpiFlashEraseAndWriteBlocks (
     UINTN  Addr2;
 
     /* Erase blocks step */
-    printf("Erase   : ");
+    printf("Erase   : \n");
+    ProgressInit();
     do {
         if ((Pos % (4 * BLKSIZE)) == 0) {
-            printf("*");
+            //printf("*");
+            ProgressShow(Pos * 100 / Num);
             fflush(stdout);
         }
         Addr0 =  Pos & 0xff;
@@ -487,14 +490,17 @@ SpiFlashEraseAndWriteBlocks (
         Pos += BLKSIZE;
         SpiFlashWait();
     } while (Pos < Num + Offset);
-    printf("   Erase OK.\n");
+    ProgressDone();
+    //printf("   Erase OK.\n");
 
     /* Write blocks step */
     Pos = Offset;
-    printf("Program : ");
+    printf("Program : \n");
+    ProgressInit();
     while (Index < Num) {
         if ((Index % 0x4000) == 0) {
-            printf("*");
+            ProgressShow(Index * 100 / Num);
+            //printf("*");
             fflush(stdout);
         }
         Addr0 = (Pos + Index) & 0xff;
@@ -504,7 +510,8 @@ SpiFlashEraseAndWriteBlocks (
         SpiFlashWriteByte (Addr0, Addr1, Addr2, Buf[Index]);
         Index++;
     }
-    printf("   Program OK.\n");
+    ProgressDone();
+    //printf("   Program OK.\n");
 }
 
     UINTN
