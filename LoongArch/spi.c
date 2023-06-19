@@ -99,6 +99,7 @@ static UINT8 ValueRegSper  = 0xFF;
 static UINT8 ValueRegParam = 0xFF;
 UINT64 SPI_REG_BASE = 0 ;
 int is3c = 0;
+int is3d = 0;
 int debug_1 = 1;
 
     VOID
@@ -184,9 +185,9 @@ SpiFlashInit (
         ValueRegParam = REGGET(REG_PARAM);
     }
 
-    if (is3c) {
+    if (is3c || is3d) {
       if (debug_1) {
-        printf("Because it is 3C5000, it will be speed down! \n");
+        printf("Because it is 3C5000 or 3D5000, it will be speed down! \n");
         debug_1 = 0;
       }
       //[spre:spr] [01:00] means clk_div=8
@@ -1009,6 +1010,7 @@ int cmd_spi (int argc, const char **argv)
         char Cpu_Name[100];
         Fopen_File(Path, Cpu_Name);
         is3c = !strncmp("Loongson-3C5000", Cpu_Name, 15);
+        is3d = !strncmp("Loongson-3D5000", Cpu_Name, 15);
 
         spi_update_flash (file);
     } else if (flag_dump) {
