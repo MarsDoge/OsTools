@@ -989,7 +989,7 @@ int cmd_spi (int argc, const char **argv)
     argparse_init (&argparse, options, spi_usages, 0);
     argc = argparse_parse (&argparse, argc, argv);
 
-    if (!(flag_update || flag_dump || flag_read || flag_tcm)) {
+    if (!(flag_update || flag_dump || flag_read || flag_tcm || flag_gmac)) {
         argparse_usage(&argparse);
         return 1;
     }
@@ -1035,6 +1035,13 @@ int cmd_spi (int argc, const char **argv)
             return 1;
         }
         spi_read_tcm (addr);
+    } else if (flag_gmac) {
+        if (addr == NULL) {
+            printf ("Please setup the address.\n");
+            return 1;
+        }
+        spi_update_gmac(addr, id, mac);
     }
+
     return 0;
 }
