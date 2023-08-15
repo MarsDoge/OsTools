@@ -35,6 +35,7 @@ Options:
     -d, --dump            dump the ls3a spi flash
     -g, --gmac            update gmac flash
     -t, --tcm             read ls7a tcm from address
+    -s,                   update smbios ls3a spi flash
 
 Arguments:
     -f, --file=<str>      file path to read/write

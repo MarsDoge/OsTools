@@ -1,4 +1,5 @@
 #include <unistd.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -949,6 +950,8 @@ static int spi_read_flash (const char* addr, int count)
     return status;
 }
 
+int spi_update_smbios();
+
 static const char *const spi_usages[] = {
     PROGRAM_NAME" spi <args>",
     NULL,
@@ -961,6 +964,7 @@ int cmd_spi (int argc, const char **argv)
     int flag_dump = 0;
     int flag_gmac = 0;
     int flag_tcm = 0;
+    int flag_smbios = 0;
     int count = 0;
     int id = 0;
     const char *file = NULL;
@@ -977,6 +981,7 @@ int cmd_spi (int argc, const char **argv)
         OPT_BOOLEAN ('d', "dump", &flag_dump, "dump the ls3a spi flash", NULL, 0, 0),
         OPT_BOOLEAN ('g', "gmac", &flag_gmac, "update gmac flash", NULL, 0, 0),
         OPT_BOOLEAN ('t', "tcm", &flag_tcm, "read ls7a tcm from address", NULL, 0, 0),
+        OPT_BOOLEAN ('s', "smbios", &flag_smbios, "update smbios ls3a spi flash", NULL, 0, 0),
         OPT_GROUP ("Arguments:"),
         OPT_STRING  ('f', "file", &file, "file path to read/write", NULL, 0, 0),
         OPT_STRING  ('a', "address", &addr, "Pci's spi control address(e.g. 1fe001f0)", NULL, 0, 0),
@@ -989,7 +994,7 @@ int cmd_spi (int argc, const char **argv)
     argparse_init (&argparse, options, spi_usages, 0);
     argc = argparse_parse (&argparse, argc, argv);
 
-    if (!(flag_update || flag_dump || flag_read || flag_tcm || flag_gmac)) {
+    if (!(flag_update || flag_dump || flag_read || flag_tcm || flag_gmac || flag_smbios)) {
         argparse_usage(&argparse);
         return 1;
     }
@@ -1041,6 +1046,8 @@ int cmd_spi (int argc, const char **argv)
             return 1;
         }
         spi_update_gmac(addr, id, mac);
+    } else if (flag_smbios) {
+        spi_update_smbios();
     }
 
     return 0;
