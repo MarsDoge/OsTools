@@ -12,7 +12,7 @@
 
 //#define  SPI_ADDR 0x1fe001f0
 #define SPI_ADDR  0  //Get at runtime
-#define FLASH_SIZE 4128768
+#define FLASH_SIZE 0x800000
 
 #define GPIO_0        (0x1<<0)
 #define GPIO_1        (0x1<<1)
@@ -89,9 +89,9 @@
 #define TRUE 1
 #define FALSE 0
 
-#define INVALID_OFFSET(x)     ((x > 0x400000)||(x < 0x0)) ? TRUE:FALSE
+#define INVALID_OFFSET(x)     ((x > FLASH_SIZE)||(x < 0x0)) ? TRUE:FALSE
 #define TCM_INVALID_OFFSET(x)     ((x > 0xffffffff)||(x < 0x0)) ? TRUE:FALSE
-#define INVALID_NUM(x)        ((x > 0x400000)||( x <= 0x0)) ? TRUE:FALSE
+#define INVALID_NUM(x)        ((x > FLASH_SIZE)||( x <= 0x0)) ? TRUE:FALSE
 #define IS_SST25VF032B(M,D,C) ((M == 0xBF)&&(D == 0x25)&&(C == 0x4A)) ? TRUE:FALSE
 
 static UINT8 ValueRegSpcr  = 0xFF;
