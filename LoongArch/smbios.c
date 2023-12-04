@@ -7,7 +7,19 @@
 #include <sys/stat.h>
 #include "def.h"
 
+#ifdef PLATFORM_LA64
+UINT32 offset = 0x3D000; //smbiosheader addr
+UINT32 nameoffset = 0x4E000; //nameheader addr
+#elif defined(PLATFORM_MIPS64) // mips64el
+UINT32 offset = 0x1E000; //smbiosheader addr
+UINT32 nameoffset = 0x2F000; //nameheader addr
+#else
+UINT32 offset = 0x3D000; //smbiosheader addr
+UINT32 nameoffset = 0x4E000; //nameheader addr
+#endif
+
 #pragma pack(1)
+
 typedef struct {
     UINT8     Type;
     UINT8     StrNum;
@@ -65,9 +77,7 @@ int spi_update_smbios()
     UINT64 n = 0;
     UINT64 s = 0;
     UINT64 l = 0;
-    UINT32 offset = 0x3D000; //smbiosheader addr
     UINT32 size = 1024*4;
-    UINT32 nameoffset = 0x4E000; //nameheader addr
     UINT32 namesize = 1024*4;
     UINT32 Index;
     UINT8  temptype;
