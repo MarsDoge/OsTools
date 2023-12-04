@@ -6,6 +6,15 @@ COMPILE_FILE_O = main.o gpio.o rtc.o acpi.o conf.o pci.o util.o spi.o mps.o i2c.
 #COMPILE_PATH =  /opt/LoongArch_Toolchains/loongarch64-linux-gnu-2021-06-19-vector/bin/loongarch64-linux-gnu-gcc
 COMPILE_PATH =  gcc
 
+ARCH := $(shell uname -m)
+ifeq ($(ARCH),loongarch64)
+CFLAGS = -DPLATFORM_LA64
+else ifeq ($(ARCH),mips64)
+CFLAGS = -DPLATFORM_MIPS64
+else
+    $(warning Unsupported architecture: $(ARCH))
+endif
+
 all: OsTools
 ##.PHONY all SEnd
 OsTools : OsTools.o
@@ -13,7 +22,7 @@ OsTools : OsTools.o
 	chmod 777 OsTools
 OsTools.o :
 	#$(COMPILE_PATH) -g -c $(COMPILE_FILE_C)
-	$(COMPILE_PATH) -c $(COMPILE_FILE_C)
+	$(COMPILE_PATH) $(CFLAGS) -c $(COMPILE_FILE_C)
 
 clean :
 	rm *.o OsTools
