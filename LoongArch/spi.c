@@ -950,7 +950,7 @@ static int spi_read_flash (const char* addr, int count)
     return status;
 }
 
-int spi_update_smbios();
+int spi_update_smbios(const char *addr);
 
 static const char *const spi_usages[] = {
     PROGRAM_NAME" spi <args>",
@@ -1047,7 +1047,7 @@ int cmd_spi (int argc, const char **argv)
         }
         spi_update_gmac(addr, id, mac);
     } else if (flag_smbios) {
-        spi_update_smbios();
+        spi_update_smbios(addr);
     }
 
     return 0;

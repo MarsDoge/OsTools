@@ -63,7 +63,7 @@ VOID  SpiFlashSafeWrite (
         UINTN        Num
         );
 
-int spi_update_smbios()
+int spi_update_smbios(const char *addr)
 {
     void * p = NULL;
     unsigned long long devaddr;
@@ -85,7 +85,14 @@ int spi_update_smbios()
 
     Index = 0;
     smbiosheader = NULL;
-    devaddr = 0x1fe001f0;
+    if(addr != NULL){
+        sscanf (addr,"%lx", &devaddr);
+        devaddr &= 0xfffffffffffffff0ULL;
+        offset = 0x41000;   //7A flash smbiosheader offset
+        nameoffset = 0x52000;   //7A flash nameheader offset
+    } else {
+        devaddr = 0x1fe001f0;
+    }
 
     int fd = open ("/dev/mem", O_RDWR|O_SYNC);
     if(fd < 0) {
