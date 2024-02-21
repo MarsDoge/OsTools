@@ -32,6 +32,7 @@ static struct cmd_struct commands[] = {
     {"ht", cmd_ht},
     {"mps", cmd_mps},
     {"spd", cmd_spd},
+    {"temp", cmd_temp},
 };
 
 int main (int argc, const char *argv[])
