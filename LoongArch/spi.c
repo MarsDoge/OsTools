@@ -12,7 +12,9 @@
 
 //#define  SPI_ADDR 0x1fe001f0
 #define SPI_ADDR  0  //Get at runtime
-#define FLASH_SIZE 0x800000
+
+unsigned int Size = 0;
+#define FLASH_SIZE    (Size ? (Size * 0x100000) : 0x800000)
 
 #define GPIO_0        (0x1<<0)
 #define GPIO_1        (0x1<<1)
@@ -881,13 +883,17 @@ static int spi_update_flash (const char *path)
     return status;
 }
 
-static int spi_dump_flash (const char *path)
+static int spi_dump_flash (const char *path, const char *addr)
 {
     void *p = NULL;
     int status ;
     unsigned long long devaddr;
 
-    devaddr = 0x1fe001f0;
+    if (addr != NULL) {
+      sscanf (addr,"%lx", &devaddr);
+    } else {
+      devaddr = 0x1fe001f0;
+    }
 
     int fd = open ("/dev/mem", O_RDWR |O_SYNC);
     if(fd < 0) {
@@ -988,6 +994,7 @@ int cmd_spi (int argc, const char **argv)
         OPT_INTEGER ('i', "id", &id, "Mac id", NULL, 0, 0),
         OPT_STRING  ('m', "mac", &mac, "Mac address(e.g. 00:11:22:33:44:55)", NULL, 0, 0),
         OPT_INTEGER ('c', "count", &count, "read count", NULL, 0, 0),
+        OPT_INTEGER ('S', "Size", &Size, "Flush Size", NULL, 0, 0),
         OPT_END (),
     };
 
@@ -1023,7 +1030,7 @@ int cmd_spi (int argc, const char **argv)
             printf ("Please setup the file.\n");
             return 1;
         }
-        spi_dump_flash (file);
+        spi_dump_flash (file, addr);
     } else if (flag_read) {
         if (addr == NULL) {
             printf ("Please setup the address.\n");
