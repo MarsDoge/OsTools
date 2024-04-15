@@ -7,6 +7,7 @@
 #include "def.h"
 #include "file.h"
 #include "process.h"
+#include <sys/stat.h>
 
 #define readw(addr)  (*(volatile unsigned int *)(addr))
 
@@ -14,7 +15,7 @@
 #define SPI_ADDR  0  //Get at runtime
 
 unsigned int Size = 0;
-#define FLASH_SIZE    (Size ? (Size * 0x100000) : 0x800000)
+#define FLASH_SIZE    (Size ? Size : 0x800000)
 
 #define GPIO_0        (0x1<<0)
 #define GPIO_1        (0x1<<1)
@@ -853,6 +854,7 @@ static int spi_update_flash (const char *path)
     void *p = NULL;
     int status ;
     unsigned long long devaddr;
+    struct stat statbuf;
 
     devaddr = 0x1fe001f0;
 
@@ -860,6 +862,18 @@ static int spi_update_flash (const char *path)
     if(fd < 0) {
         printf("can't open file,please use root .\n");
         return 1;
+    }
+
+    // get file size
+    if (stat (path, &statbuf) == 0) {
+      printf ("The file size %s is %#lx bytes.\n", path, statbuf.st_size);
+      if (Size != 0) {
+        printf ("specify Flush Size %#lx .\n",Size);
+      } else {
+        Size = statbuf.st_size;
+      }
+    } else {
+      printf ("Failed to get file status.\n");
     }
 
     /*Transfer Virtul to Phy Addr*/
@@ -873,6 +887,7 @@ static int spi_update_flash (const char *path)
         printf("Read File Error , PATH error!!!\n");
         return 1;
     }
+
     fread(buf, FLASH_SIZE, 1, pfile);
     printf("------------Read Buf Get Success!-----------\n");
 
