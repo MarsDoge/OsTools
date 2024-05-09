@@ -167,6 +167,7 @@ Fopen_File (
    Str[i] = Ch;
    i++;
  }
+ fclose(fp);
 // printf("Cpu_Tame:%s", Str);
 // printf("Cpu_Type0:%s", Cpu_Type[0]);
 }
@@ -870,7 +871,8 @@ static int spi_update_flash (const char *path)
       if (Size != 0) {
         printf ("specify Flush Size %#lx .\n",Size);
       } else {
-        Size = statbuf.st_size;
+        Size = (statbuf.st_size + 4*1024 - 1) & ~(4*1024 - 1);
+        printf ("Assign file Size: %lx for one section(4K): .\n",Size);
       }
     } else {
       printf ("Failed to get file status.\n");
@@ -929,7 +931,7 @@ static int spi_dump_flash (const char *path, const char *addr)
         return 1;
     }
 
-    fwrite (buf, 1, 4128768, pfile);
+    fwrite (buf, 1, FLASH_SIZE, pfile);
     fflush (pfile);
     fclose (pfile);
     free (buf);
@@ -1036,8 +1038,8 @@ int cmd_spi (int argc, const char **argv)
         char *Path="./"FILE_NAME_1;
         char Cpu_Name[100];
         Fopen_File(Path, Cpu_Name);
-        is3c = !strncmp("Loongson-3C5000", Cpu_Name, 15);
-        is3d = !strncmp("Loongson-3D5000", Cpu_Name, 15);
+        is3c = !!strstr(Cpu_Name, "3C5000");
+        is3d = !!strstr(Cpu_Name, "3D5000");
 
         spi_update_flash (file);
     } else if (flag_dump) {
