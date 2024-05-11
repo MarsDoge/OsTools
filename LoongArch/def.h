@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0
 #ifndef __DEF_H_
 #define __DEF_H_
 #include "argparse.h"
@@ -9,7 +10,7 @@
 #endif
 
 #define PROGRAM_NAME "OsTools"
-#define PROGRAM_VERSION "1.2"
+#define PROGRAM_VERSION "1.3"
 
 #define LS7A_CONF_BASE_ADDR   0x10010000
 #define LS7A_MISC_BASE_ADDR   0x10080000
@@ -45,5 +46,7 @@ int cmd_pci  (int argc, const char **argv);
 int cmd_rtc  (int argc, const char **argv);
 int cmd_spd  (int argc, const char **argv);
 int cmd_spi  (int argc, const char **argv);
+int cmd_temp (int argc, const char **argv);
+int cmd_avs (int argc, const char **argv);
 
 #endif

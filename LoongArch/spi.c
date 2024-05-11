@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0
 #include <unistd.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -7,12 +8,14 @@
 #include "def.h"
 #include "file.h"
 #include "process.h"
+#include <sys/stat.h>
 
 #define readw(addr)  (*(volatile unsigned int *)(addr))
 
 //#define  SPI_ADDR 0x1fe001f0
 #define SPI_ADDR  0  //Get at runtime
-#define FLASH_SIZE 0x800000
+unsigned int Size = 0;
+#define FLASH_SIZE    (Size ? Size : 0x800000/*default 8M*/)
 
 #define GPIO_0        (0x1<<0)
 #define GPIO_1        (0x1<<1)
@@ -164,6 +167,7 @@ Fopen_File (
    Str[i] = Ch;
    i++;
  }
+ fclose(fp);
 // printf("Cpu_Tame:%s", Str);
 // printf("Cpu_Type0:%s", Cpu_Type[0]);
 }
@@ -851,6 +855,7 @@ static int spi_update_flash (const char *path)
     void *p = NULL;
     int status ;
     unsigned long long devaddr;
+    struct stat statbuf;
 
     devaddr = 0x1fe001f0;
 
@@ -858,6 +863,19 @@ static int spi_update_flash (const char *path)
     if(fd < 0) {
         printf("can't open file,please use root .\n");
         return 1;
+    }
+
+    // get file size
+    if (stat (path, &statbuf) == 0) {
+      printf ("The file size %s is %#lx bytes.\n", path, statbuf.st_size);
+      if (Size != 0) {
+        printf ("specify Flush Size %#lx .\n",Size);
+      } else {
+        Size = (statbuf.st_size + 4*1024 - 1) & ~(4*1024 - 1);
+        printf ("Assign file Size: %lx for one section(4K): .\n",Size);
+      }
+    } else {
+      printf ("Failed to get file status.\n");
     }
 
     /*Transfer Virtul to Phy Addr*/
@@ -871,6 +889,7 @@ static int spi_update_flash (const char *path)
         printf("Read File Error , PATH error!!!\n");
         return 1;
     }
+
     fread(buf, FLASH_SIZE, 1, pfile);
     printf("------------Read Buf Get Success!-----------\n");
 
@@ -881,13 +900,17 @@ static int spi_update_flash (const char *path)
     return status;
 }
 
-static int spi_dump_flash (const char *path)
+static int spi_dump_flash (const char *path, const char *addr)
 {
     void *p = NULL;
     int status ;
     unsigned long long devaddr;
 
-    devaddr = 0x1fe001f0;
+    if (addr != NULL) {
+      sscanf (addr,"%lx", &devaddr);
+    } else {
+      devaddr = 0x1fe001f0;
+    }
 
     int fd = open ("/dev/mem", O_RDWR |O_SYNC);
     if(fd < 0) {
@@ -908,7 +931,7 @@ static int spi_dump_flash (const char *path)
         return 1;
     }
 
-    fwrite (buf, 1, 4128768, pfile);
+    fwrite (buf, 1, FLASH_SIZE, pfile);
     fflush (pfile);
     fclose (pfile);
     free (buf);
@@ -950,7 +973,7 @@ static int spi_read_flash (const char* addr, int count)
     return status;
 }
 
-int spi_update_smbios();
+int spi_update_smbios(const char *addr);
 
 static const char *const spi_usages[] = {
     PROGRAM_NAME" spi <args>",
@@ -988,6 +1011,7 @@ int cmd_spi (int argc, const char **argv)
         OPT_INTEGER ('i', "id", &id, "Mac id", NULL, 0, 0),
         OPT_STRING  ('m', "mac", &mac, "Mac address(e.g. 00:11:22:33:44:55)", NULL, 0, 0),
         OPT_INTEGER ('c', "count", &count, "read count", NULL, 0, 0),
+        OPT_INTEGER ('S', "Size", &Size, "Flush Size", NULL, 0, 0),
         OPT_END (),
     };
 
@@ -1014,8 +1038,8 @@ int cmd_spi (int argc, const char **argv)
         char *Path="./"FILE_NAME_1;
         char Cpu_Name[100];
         Fopen_File(Path, Cpu_Name);
-        is3c = !strncmp("Loongson-3C5000", Cpu_Name, 15);
-        is3d = !strncmp("Loongson-3D5000", Cpu_Name, 15);
+        is3c = !!strstr(Cpu_Name, "3C5000");
+        is3d = !!strstr(Cpu_Name, "3D5000");
 
         spi_update_flash (file);
     } else if (flag_dump) {
@@ -1023,7 +1047,7 @@ int cmd_spi (int argc, const char **argv)
             printf ("Please setup the file.\n");
             return 1;
         }
-        spi_dump_flash (file);
+        spi_dump_flash (file, addr);
     } else if (flag_read) {
         if (addr == NULL) {
             printf ("Please setup the address.\n");
@@ -1047,7 +1071,7 @@ int cmd_spi (int argc, const char **argv)
         }
         spi_update_gmac(addr, id, mac);
     } else if (flag_smbios) {
-        spi_update_smbios();
+        spi_update_smbios(addr);
     }
 
     return 0;

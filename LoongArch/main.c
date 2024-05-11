@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -32,6 +33,8 @@ static struct cmd_struct commands[] = {
     {"ht", cmd_ht},
     {"mps", cmd_mps},
     {"spd", cmd_spd},
+    {"temp", cmd_temp},
+    {"avs", cmd_avs},
 };
 
 int main (int argc, const char *argv[])

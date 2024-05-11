@@ -4,14 +4,14 @@
 #include <fcntl.h>
 #include "def.h"
 
-#define RTC_BASE_ADDR				0x50100
+#define CHIPSET0_TEMP 0xe0010000414ULL
 
-static const char *const rtc_usages[] = {
-    PROGRAM_NAME" rtc <args>",
+static const char *const temp_usages[] = {
+    PROGRAM_NAME" temp <args>",
     NULL,
 };
 
-int rtc_read (void)
+int chipset_temp_read (void)
 {
     void * p = NULL;
     int status ;
@@ -23,37 +23,24 @@ int rtc_read (void)
         return 1;
     }
 
-    devaddr = LS7A_MISC_BASE_ADDR + RTC_BASE_ADDR;
+    devaddr = CHIPSET0_TEMP;
 
     /*Transfer Virtul to Phy Addr*/
     p = vtpa (devaddr, fd);
 
     /*Debug Rtc*/
-    printf("Rtc Reg Read Start ...\n");
-    int i = 0;
-    unsigned char j = 0;
+    printf("Chipset Temp Read Start ...\n");
     unsigned int tmp_tmp = 0;
-#if 1
-    unsigned char regbuf[] = {0x20,0x24,0x28,0x2c,0x30,0x34,0x38,0x3c,0x40,0x60,0x64,0x68,0x6c,0x70,0x74};
-    unsigned char buflen = sizeof(regbuf);
-    for(i = 0, j = 0; i < buflen; i++){
-        j = regbuf[i];
-        tmp_tmp = (*(volatile unsigned int *)(p + j));
-        printf ("RegNum:%x    RegVal:%x \n", j, tmp_tmp);
-    }
-#endif
+
+    tmp_tmp = *(volatile unsigned int *)p;
+    printf ("Chipset0 Current Temp Val:%d \n", (tmp_tmp & 0xffff0000) >> 24);
+
     status = releaseMem(p);
     close(fd);
     return status;
 }
 
-int rtc_write (void)
-{
-    printf("-w Func\n");
-    return 0;
-}
-
-int cmd_rtc (int argc, const char **argv)
+int cmd_temp (int argc, const char **argv)
 {
     int read = 0;
     int write = 0;
@@ -62,12 +49,12 @@ int cmd_rtc (int argc, const char **argv)
 
     struct argparse_option options[] = {
         OPT_HELP(),
-        OPT_BOOLEAN ('r', "read", &read, "read rtc", NULL, 0, 0),
-        OPT_BOOLEAN ('w', "write", &write, "write rtc", NULL, 0, 0),
+        OPT_BOOLEAN ('r', "read", &read, "read Temp", NULL, 0, 0),
+        OPT_BOOLEAN ('w', "write", &write, "write No", NULL, 0, 0),
         OPT_END(),
     };
 
-    argparse_init(&argparse, options, rtc_usages, 0);
+    argparse_init(&argparse, options, temp_usages, 0);
     argc = argparse_parse(&argparse, argc, argv);
 
     if (!(read || write)) {
@@ -82,9 +69,9 @@ int cmd_rtc (int argc, const char **argv)
     }
 
     if (read) {
-        rtc_read ();
+        chipset_temp_read ();
     } else if (write) {
-        rtc_write ();
+        //rtc_write ();
     }
     return 0;
 }
