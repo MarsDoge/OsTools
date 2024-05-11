@@ -1,4 +1,4 @@
-
+// SPDX-License-Identifier: GPL-2.0
 #ifndef _PROCESS_H_
 #define _PROCESS_H_
 

@@ -1,4 +1,4 @@
-
+# SPDX-License-Identifier: GPL-2.0
 COMPILE_FILE_C = main.c gpio.c rtc.c acpi.c conf.c pci.c util.c spi.c mps.c i2c.c spd.c ht.c argparse.c process.c smbios.c temp.c avs.c
 COMPILE_FILE_O = main.o gpio.o rtc.o acpi.o conf.o pci.o util.o spi.o mps.o i2c.o spd.o ht.o argparse.o process.o smbios.o temp.o avs.o
 
