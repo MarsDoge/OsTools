@@ -290,9 +290,9 @@ void
 argparse_usage(struct argparse *self)
 {
     if (self->usages) {
-        fprintf(stdout, "Usage: %s\n", *self->usages++);
+        fprintf(stdout, "Usage: %s", *self->usages++);
         while (*self->usages && **self->usages)
-            fprintf(stdout, "   or: %s\n", *self->usages++);
+            fprintf(stdout, "%s\n", *self->usages++);
     } else {
         fprintf(stdout, "Usage:\n");
     }

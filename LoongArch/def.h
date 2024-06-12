@@ -48,5 +48,6 @@ int cmd_spd  (int argc, const char **argv);
 int cmd_spi  (int argc, const char **argv);
 int cmd_temp (int argc, const char **argv);
 int cmd_avs (int argc, const char **argv);
+int cmd_fastboot (int argc, const char **argv);
 
 #endif

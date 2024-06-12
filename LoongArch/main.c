@@ -20,6 +20,7 @@ static const char *const usages[] = {
     "    ht         Read HT\n"
     "    mps        Read or write MPS\n"
     "    spd        Read SPD\n",
+    "    fastboot   Read or set fastboot mode\n",
     NULL,
 };
 
@@ -35,6 +36,7 @@ static struct cmd_struct commands[] = {
     {"spd", cmd_spd},
     {"temp", cmd_temp},
     {"avs", cmd_avs},
+    {"fastboot", cmd_fastboot},
 };
 
 int main (int argc, const char *argv[])
