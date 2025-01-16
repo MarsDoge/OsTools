@@ -5,14 +5,15 @@
 #include "def.h"
 
 //#define SPI_CONFUSE_SPACE (0x0efdfe000000 + 0x8000/*Need 4K align*/ ) //b000 is Spi,so add 0x3000
-#define PCI_CONFUSE_SPACE 0x0efdfe000000
+#define PCI_EX_CONFUSE_SPACE_TYPE0 0x0efe00000000
+#define PCI_EX_CONFUSE_SPACE_TYPE1 0x0efe10000000
 
 static const char *const pci_usages[] = {
     PROGRAM_NAME" pci <args>",
     NULL,
 };
 
-static int pci_read (const char* addr)
+static int pci_read (const char* addr, int port, int pcie_type_bus, int bus_id)
 {
     void * p = NULL;
     int status ;
@@ -22,7 +23,25 @@ static int pci_read (const char* addr)
     unsigned long long devaddr;
     int fd;
 
-    devaddr = PCI_CONFUSE_SPACE;
+    if (pcie_type_bus) {
+	devaddr = PCI_EX_CONFUSE_SPACE_TYPE1;
+    } else {
+	devaddr = PCI_EX_CONFUSE_SPACE_TYPE0;
+    }
+    devaddr |= bus_id << 16;
+    devaddr |= port << 11;
+
+    printf ("devaddr map phyaddress: %lx \n", devaddr);
+
+    int a = 0;
+    sscanf (addr, "%x", &a);
+ 
+    if (a >= 0x100) {
+	    devaddr |= ((a & 0xf00) >> 8) << 24;
+    }
+    a = a & 0xff;
+
+    printf ("devaddr map phyaddress offset: %lx \n", a);
 
     fd = open("/dev/mem", O_RDWR|O_SYNC);
     if (fd < 0) {
@@ -32,13 +51,8 @@ static int pci_read (const char* addr)
 
     p = vtpa(devaddr,fd);
 
-    int a = 0;
-    sscanf (addr, "%x", &a);
+    printf("Get Pcie value %#x \n",*(unsigned int *)(p + a));
 
-    printf("your input Pci Offset 0x%lx \n",a);
-
-    printf(" Auto Read Pci(Bus:%d Device:%d Function:%d) 0x10 Bar Mem Start, 0x%lx \n",(a>>16),((a>>11)&0x1f),((a>>8)&7), *(volatile unsigned long *)(p + a + 0x10));
-    printf(" Auto Read Pci(Bus:%d Device:%d Function:%d) 0x10 Bar Mem Start, 0x%lx \n",(a>>16),((a>>11)&0x1f),((a>>8)&7), *(volatile unsigned long *)(p + a + 0x4));
     //lack auto know device name array
     return 0;
 }
@@ -49,11 +63,17 @@ int cmd_pci (int argc, const char **argv)
     const char *addr = NULL;
     uid_t uid;
     struct argparse argparse;
+    int port = -1; //default 0xff invalid
+    int pcie_type_bus = 0;
+    int bus_id = 0;
 
     struct argparse_option options[] = {
         OPT_HELP(),
         OPT_BOOLEAN ('r', "read", &read, "Read Pci Bar Mem Start", NULL, 0, 0),
         OPT_STRING  ('a', "address", &addr, "Address offset composed of Bus", NULL, 0, 0),
+        OPT_INTEGER ('p', "port", &port, "pcie device port id", NULL, 0, 0),
+        OPT_BOOLEAN ('e', "pcie_type_bus", &pcie_type_bus, "EX Space", NULL, 0, 0),
+        OPT_INTEGER ('b', "bus", &bus_id, "bus id", NULL, 0, 0),
         OPT_END(),
     };
 
@@ -72,11 +92,11 @@ int cmd_pci (int argc, const char **argv)
     }
 
     if (read) {
-        if (addr == NULL) {
-            printf ("Please setup the offset address.\n");
+        if (port == -1) {
+            printf ("Please setup the device port.\n");
             return 1;
         }
-        pci_read (addr);
+        pci_read (addr, port, pcie_type_bus, bus_id);
     }
     return 0;
 }
