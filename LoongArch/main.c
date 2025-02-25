@@ -39,6 +39,7 @@ static struct cmd_struct commands[] = {
     {"avs", cmd_avs},
     {"fastboot", cmd_fastboot},
     {"lcl", cmd_lcl},
+    {"ecc", cmd_ecc},
 };
 
 int main (int argc, const char *argv[])
