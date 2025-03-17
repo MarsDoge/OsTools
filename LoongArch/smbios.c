@@ -64,7 +64,7 @@ VOID  SpiFlashSafeWrite (
         UINTN        Num
         );
 
-int spi_update_smbios(const char *addr)
+int spi_update_smbios(const char *addr, int command, const char **argv)
 {
     void * p = NULL;
     unsigned long long devaddr;
@@ -107,11 +107,36 @@ int spi_update_smbios(const char *addr)
 
     printf("%s", commandLineHelp);
 
+    if (command) {
+	    if (argv[0]) {
+		status = sscanf(argv[0],"%s",RecordName);
+		printf("param0: %s\n", RecordName);
+	    }
+	    if (argv[1]) {
+		status = sscanf(argv[1],"%s",RecordName1);
+		printf("param1: %s\n", RecordName1);
+	    }
+	    if (argv[2]) {
+		status = sscanf(argv[2],"%s",RecordName2);
+		printf("param2: %s\n", RecordName2);
+	    }
+	    if (argv[3]) {
+		status = sscanf(argv[3],"%s",RecordName3);
+		printf("param3: %s\n", RecordName3);
+	    }
+	    if (!(argv[0] && argv[1] && argv[2])) {
+                printf("This may be a mistake, string is null, please check !!! \n");
+		goto done;
+	    }
+    }
+
     printf("Please input smbios type (only support 1/2/3):");
 
-    status = scanf("%s",RecordName); //1.smbios type
+    if (!command) {
+	status = scanf("%s",RecordName); //1.smbios type
+    }
     if (RecordName != NULL) {
-        //printf("RecordName: (%s)\n", RecordName);
+        printf("RecordName: (%s)\n", RecordName);
         t = atoi(RecordName);
         printf("t: (%x)\n", t);
         if ((t > 3) || (t <= 0)){
@@ -125,9 +150,11 @@ int spi_update_smbios(const char *addr)
         printf("\n");
         printf("Please input smbios string number (only support 1/2/3/4/5/6/7):");
 
-        status = scanf("%s",RecordName1); //2. smbios string number
-        if (RecordName1 != NULL) {
-            //printf("RecordName1: (%s)\n", RecordName1);
+	if (!command) {
+            status = scanf("%s",RecordName1); //2. smbios string number
+	}
+	if (RecordName1 != NULL) {
+            printf("RecordName1: (%s)\n", RecordName1);
             n = atoi(RecordName1);
             printf("n: (%x)\n", n);
             if ((n > 7) || (n <= 0)){
@@ -178,14 +205,17 @@ int spi_update_smbios(const char *addr)
             } else {
                 printf("Please Input smbios strings:");
             }
-            status = scanf("%s",RecordName2); //3.smbios string
-
-            if (RecordName2 != NULL) {
-                //printf("RecordName2: (%s)-(%d)\n", RecordName2, (strlen((char *)RecordName2) + 1) * 2);
+	    if (!command) {
+              status = scanf("%s",RecordName2); //3.smbios string
+	    }
+            if ((RecordName2 != NULL) && (strlen((char *)RecordName2) >= 1)) {
+                printf("RecordName2: (%s)-(%d)\n", RecordName2, (strlen((char *)RecordName2) + 1) * 2);
                 smbiosheader->StrSize = (strlen((char *)RecordName2) + 1) * 2;
                 if (Index == 6) {
                     printf("Please Input smbios HEX2(64):");
-                    status = scanf("%s",RecordName3);
+		    if (!command) {
+                      status = scanf("%s",RecordName3);
+		    }
                     if (RecordName3 != NULL) {
                         //printf("RecordName3: (%s)\n", RecordName3);
                         char *endptr1;
@@ -211,14 +241,25 @@ int spi_update_smbios(const char *addr)
 
                 SpiFlashSafeWrite(0 + nameoffset, RecordName2, namesize);
                 SpiFlashSafeWrite(0 + offset, smbiosheader, size);
-            }
-        }
+	    } else {
+                printf("This may be a mistake, string is null, please check !!! \n");
+		goto done;
+	    }
+        } else {
+                printf("This may be a mistake, string is null, please check !!! \n");
+		goto done;
+	}
+    } else {
+            printf("This may be a mistake, string is null, please check !!! \n");
+	    goto done;
     }
 
-    status = releaseMem(p);
-    close(fd);
+
     free(smbiosheader);
     printf("Program OK.\n");
+done:
+    status = releaseMem(p);
+    close(fd);
 
     return status;
 }

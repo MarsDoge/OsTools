@@ -973,7 +973,7 @@ static int spi_read_flash (const char* addr, int count)
     return status;
 }
 
-int spi_update_smbios(const char *addr);
+int spi_update_smbios(const char *addr, int command, const char **arg);
 
 static const char *const spi_usages[] = {
     PROGRAM_NAME" spi <args>",
@@ -990,6 +990,7 @@ int cmd_spi (int argc, const char **argv)
     int flag_smbios = 0;
     int count = 0;
     int id = 0;
+    int command = 0;
     const char *file = NULL;
     const char *addr = NULL;
     const char *mac = NULL;
@@ -1012,6 +1013,7 @@ int cmd_spi (int argc, const char **argv)
         OPT_STRING  ('m', "mac", &mac, "Mac address(e.g. 00:11:22:33:44:55)", NULL, 0, 0),
         OPT_INTEGER ('c', "count", &count, "read count", NULL, 0, 0),
         OPT_INTEGER ('S', "Size", &Size, "Flush Size", NULL, 0, 0),
+        OPT_BOOLEAN ('C', "command model", &command, "command model", NULL, 0, 0),
         OPT_END (),
     };
 
@@ -1071,7 +1073,7 @@ int cmd_spi (int argc, const char **argv)
         }
         spi_update_gmac(addr, id, mac);
     } else if (flag_smbios) {
-        spi_update_smbios(addr);
+        spi_update_smbios(addr,command,argv);
     }
 
     return 0;
