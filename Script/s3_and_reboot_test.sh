@@ -9,7 +9,7 @@ S3_REPEAT=3
 REBOOT_REPEAT=3
 
 # S3 睡眠时间（秒）
-SLEEP_DURATION=10
+SLEEP_DURATION=30
 
 # 挂起模式（S3 对应 mem）
 SUSPEND_MODE=mem
@@ -36,7 +36,7 @@ s3_test() {
         rtcwake -m "$SUSPEND_MODE" -s "$SLEEP_DURATION"
         log "S3 测试 [$i/$S3_REPEAT]：系统已唤醒。"
         log "-------------------------------------------"
-        sleep 1
+        sleep 5
     done
 
     log "==== S3 睡眠唤醒测试完成 ===="
