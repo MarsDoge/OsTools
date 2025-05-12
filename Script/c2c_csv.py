@@ -8,7 +8,8 @@ def load_data(filename):
     m = np.array(pd.read_csv(filename, header=None))
     m = np.tril(m) + np.tril(m).T - np.diag(np.diag(m))  # 构造对称矩阵
     median = np.nanmedian(m)
-    np.fill_diagonal(m, median)  # 填补对角线
+    #np.fill_diagonal(m, median)  # 填补对角线
+    np.fill_diagonal(m, 0)  # 填补对角线
     m = np.where(np.isnan(m), median, m)  # 替换残余 NaN
     return m
 
