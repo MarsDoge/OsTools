@@ -160,7 +160,12 @@ void *vtpa(unsigned long long vaddr,int fd)
 int releaseMem(void *p)
 {
     int status ;
-    status = munmap(p-memoffset, 1);
+    /*
+     * munmap length should match the size used in mmap. The previous
+     * implementation only unmapped a single byte which would leak the
+     * rest of the mapping. Unmap the full 64KB region instead.
+     */
+    status = munmap(p - memoffset, 0x10000);
     if(status == -1){
         printf("----------  Release mem Map Error !!! ------\n");
     }
