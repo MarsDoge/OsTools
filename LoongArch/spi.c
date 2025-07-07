@@ -849,6 +849,45 @@ static int spi_update_gmac (const char* addr, int id, const char* mac)
     return status;
 }
 
+/**
+ * spi_write_flash:
+ * @addr: 
+ * @offset: 
+ * @val: 
+ *
+ *
+ **/
+static int spi_update_region (const char* addr, int offset, unsigned char data)
+{
+    void * p = NULL;
+    int status ;
+    unsigned int spcr = 0;
+    unsigned int spsr = 0;
+    unsigned int sper = 0;
+    unsigned int param = 0;
+    unsigned long long c = 0;
+    unsigned long long devaddr;
+
+    sscanf (addr, "%lx", &c);
+    devaddr = c;
+
+    int fd = open ("/dev/mem", O_RDWR|O_SYNC);
+    if (fd < 0) {
+        printf("can't open file,please use root .\n");
+        return 1;
+    }
+
+    /*Transfer Virtul to Phy Addr*/
+    p = vtpa (devaddr, fd);
+    SPI_REG_BASE = (UINTN)p & 0xfffffffffffffff0ULL;
+
+    SpiFlashSafeWrite (offset, &data, 1);
+
+    status = releaseMem (p);
+    return status;
+}
+
+
 
 static int spi_update_flash (const char *path)
 {
@@ -983,6 +1022,7 @@ static const char *const spi_usages[] = {
 int cmd_spi (int argc, const char **argv)
 {
     int flag_read = 0;
+    int flag_write = 0;
     int flag_update = 0;
     int flag_dump = 0;
     int flag_gmac = 0;
@@ -996,6 +1036,8 @@ int cmd_spi (int argc, const char **argv)
     const char *mac = NULL;
     uid_t uid;
     struct argparse argparse;
+    int data = 0;
+    int offset = 0;
 
     struct argparse_option options[] = {
         OPT_HELP (),
@@ -1014,13 +1056,16 @@ int cmd_spi (int argc, const char **argv)
         OPT_INTEGER ('c', "count", &count, "read count", NULL, 0, 0),
         OPT_INTEGER ('S', "Size", &Size, "Flush Size", NULL, 0, 0),
         OPT_BOOLEAN ('C', "command model", &command, "command model", NULL, 0, 0),
+        OPT_BOOLEAN ('w', "write", &flag_write, "write spi address", NULL, 0, 0),
+        OPT_INTEGER ('o', "offset", &offset, "write/read offset", NULL, 0, 0),
+        OPT_INTEGER ('x', "data", &data, "write/read offset", NULL, 0, 0),
         OPT_END (),
     };
 
     argparse_init (&argparse, options, spi_usages, 0);
     argc = argparse_parse (&argparse, argc, argv);
 
-    if (!(flag_update || flag_dump || flag_read || flag_tcm || flag_gmac || flag_smbios)) {
+    if (!(flag_update || flag_dump || flag_read || flag_write || flag_tcm || flag_gmac || flag_smbios)) {
         argparse_usage(&argparse);
         return 1;
     }
@@ -1074,6 +1119,8 @@ int cmd_spi (int argc, const char **argv)
         spi_update_gmac(addr, id, mac);
     } else if (flag_smbios) {
         spi_update_smbios(addr,command,argv);
+    } else if (flag_write) {
+        spi_update_region(addr, offset, data);
     }
 
     return 0;
