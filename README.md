@@ -13,7 +13,7 @@ OsTools 是一套专为 Loongson（龙芯）平台设计的系统工具集，通
 
 ### 依赖
 
-- 编译依赖：GNU Make、GCC
+- 编译依赖：GNU Make、GCC、git
 - 脚本依赖（可选）：numpy、pandas、matplotlib、requests、beautifulsoup4
 
 ### 编译与安装

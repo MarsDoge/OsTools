@@ -58,6 +58,7 @@ int main (int argc, const char *argv[])
 
     if (version) {
         printf("%s %s\n", PROGRAM_NAME, PROGRAM_VERSION);
+        printf("compile git commit:%s \n", GIT_COMMIT_ID);
         return 0;
     }
 

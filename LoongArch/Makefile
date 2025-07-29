@@ -8,6 +8,8 @@ COMPILE_FILE_O = main.o gpio.o rtc.o acpi.o conf.o pci.o util.o spi.o mps.o i2c.
 #COMPILE_PATH =  /opt/LoongArch_Toolchains/loongarch64-linux-gnu-2021-06-19-vector/bin/loongarch64-linux-gnu-gcc
 COMPILE_PATH =  gcc
 
+GIT_COMMIT_ID := $(shell git rev-parse HEAD)
+
 ARCH := $(shell uname -m)
 ifeq ($(ARCH),loongarch64)
 CFLAGS = -DPLATFORM_LA64
@@ -24,7 +26,7 @@ OsTools : OsTools.o
 	chmod 777 OsTools
 OsTools.o :
 	#$(COMPILE_PATH) -g -c $(COMPILE_FILE_C)
-	$(COMPILE_PATH) $(CFLAGS) -c $(COMPILE_FILE_C)
+	$(COMPILE_PATH) $(CFLAGS) -c $(COMPILE_FILE_C) -DGIT_COMMIT_ID="\"$(GIT_COMMIT_ID)\""
 
 clean :
 	rm *.o OsTools
