@@ -9,11 +9,19 @@ if [[ $EUID -ne 0 ]]; then
   exit 1
 fi
 
-if [[ $# -ne 2 ]]; then
-  echo "Usage: $0 <BDF(A)> <B(0..0xF)>" >&2
-  echo " e.g. $0 0002:00:00.0 0x4" >&2
+if [[ $# -lt 2 || $# -gt 3 ]]; then
+  echo "Usage: $0 <BDF(A)> <B(1..0x4)> <C(0..9)>" >&2
+  echo " e.g. $0 0002:00:00.0 0x4 6" >&2
   exit 1
 fi
+
+# （新增）可选第三参数：Preset（0..9）
+if [ $# -ge 3 ]; then
+  P=$3
+fi
+# 在设置 P 后面加一行简单校验（可选）
+if [ -n "${P:-}" ] && [ $((P & 0xF)) -gt 9 ]; then echo "Preset must be 0..9"; exit 1; fi
+
 
 BDF="$1"
 # 只取 B 的低4位
@@ -137,6 +145,18 @@ setpci -s "$BDF" 0xA0.B=$(printf "%02x" "$A0_CLR")
 A0_SETLOW=$(((A0_CLR & 0xF0) | (B & 0x0F)))
 printf "CFG[0xA0][3:0] <- 0x%X => 0x%02X\n" "$B" "$A0_SETLOW"
 setpci -s "$BDF" 0xA0.B=$(printf "%02x" "$A0_SETLOW")
+
+# --- Step 3.5: 设置 Compliance Preset（仅在提供了第三参数时生效）
+if [ -n "${P:-}" ]; then
+  # 读取 Link Control 2（PCIe Capability + 0x30，16位）
+  LNKCTL2_HEX=$(setpci -s "$BDF" CAP_EXP+0x30.W)
+  LNKCTL2=$((16#$LNKCTL2_HEX))
+  # 清掉 bit6..9（0x03C0），写入 P 的低4位（Gen3+ 为 Preset 0..9；Gen2 解释为去加重档位）
+  LNKCTL2_NEW=$(( (LNKCTL2 & ~0x03C0) | ( (P & 0xF) << 6 ) ))
+  printf "LnkCtl2(CAP_EXP+0x30): 0x%04X -> 0x%04X (Preset=%d)\n" \
+         "$LNKCTL2" "$LNKCTL2_NEW" "$((P & 0xF))"
+  setpci -s "$BDF" CAP_EXP+0x30.W=$(printf "%04x" "$LNKCTL2_NEW")
+fi
 
 # ---- Step 4: 置 0xA0 的 bit4 = 1
 A0_AFTER_HEX=$(setpci -s "$BDF" 0xA0.B)
