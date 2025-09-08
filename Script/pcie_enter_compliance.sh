@@ -151,8 +151,8 @@ if [ -n "${P:-}" ]; then
   # 读取 Link Control 2（PCIe Capability + 0x30，16位）
   LNKCTL2_HEX=$(setpci -s "$BDF" CAP_EXP+0x30.W)
   LNKCTL2=$((16#$LNKCTL2_HEX))
-  # 清掉 bit6..9（0x03C0），写入 P 的低4位（Gen3+ 为 Preset 0..9；Gen2 解释为去加重档位）
-  LNKCTL2_NEW=$(( (LNKCTL2 & ~0x03C0) | ( (P & 0xF) << 6 ) ))
+  # 清掉 bit15..12（0xF000），写入 P 的低4位（Gen3+ 为 Preset 0..9；Gen2 解释为去加重档位）
+  LNKCTL2_NEW=$(( (LNKCTL2 & ~0xF000) | ( (P & 0xF) << 12 ) ))
   printf "LnkCtl2(CAP_EXP+0x30): 0x%04X -> 0x%04X (Preset=%d)\n" \
          "$LNKCTL2" "$LNKCTL2_NEW" "$((P & 0xF))"
   setpci -s "$BDF" CAP_EXP+0x30.W=$(printf "%04x" "$LNKCTL2_NEW")
