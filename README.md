@@ -124,6 +124,9 @@ OsTools/
 └── README.md              # 项目说明文档
 ```
 
+##
+添加GPT_Codex自动审核
+
 ## 贡献与支持
 
 - 项目采用 GPLv2 协议开源
