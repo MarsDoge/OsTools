@@ -8,6 +8,25 @@
 
 INI_FILE="./uefidir.ini"
 
+is_sourced() {
+  [[ "${BASH_SOURCE[0]}" != "$0" ]]
+}
+
+if ! is_sourced; then
+  echo "❌ 请使用 source 方式运行本脚本，以便在当前 shell 中切换目录。"
+  echo "   示例: source Script/dir-select.sh"
+  exit 1
+fi
+
+finish() {
+  local code=${1:-0}
+  if is_sourced; then
+    return "$code"
+  else
+    exit "$code"
+  fi
+}
+
 # ====== 检查配置文件 ======
 if [ ! -f "$INI_FILE" ]; then
   echo "⚠️ 未找到配置文件: $INI_FILE"
@@ -16,7 +35,7 @@ if [ ! -f "$INI_FILE" ]; then
   echo "$HOME/work/uefi-loongarch :: 3A6000 EVB 主板"
   echo "$HOME/github/LsRefCodePkg_3C6000 :: 3C6000 服务器平台"
   echo ""
-  exit 1
+  finish 1
 fi
 
 # ====== 读取配置 ======
@@ -24,7 +43,7 @@ mapfile -t ITEMS < <(grep -v '^[[:space:]]*#' "$INI_FILE" | grep -v '^[[:space:]
 
 if [ ${#ITEMS[@]} -eq 0 ]; then
   echo "⚠️ 配置文件为空: $INI_FILE"
-  exit 1
+  finish 1
 fi
 
 # ====== 交互菜单 ======
@@ -44,7 +63,7 @@ fi
 
 # ====== 进入目录 ======
 if [ -n "$DIR" ] && [ -d "$DIR" ]; then
-  cd "$DIR" || exit
+  cd "$DIR" || finish 1
   echo "✅ 已进入目录: $DIR"
 else
   echo "⚠️ 目录不存在: $DIR"
