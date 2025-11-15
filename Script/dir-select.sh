@@ -6,7 +6,7 @@
 #   - 每行格式:  路径 :: 注释
 #   - 提供交互菜单选择后自动 cd 进入
 
-INI_FILE="./uefidir.ini"
+INI_FILE="$PWD/uefidir.ini"
 
 is_sourced() {
   [[ "${BASH_SOURCE[0]}" != "$0" ]]
