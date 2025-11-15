@@ -129,4 +129,9 @@ OsTools/
 - 项目采用 GPLv2 协议开源
 - 欢迎提交 Issue 或 Pull Request，反馈建议和贡献代码
 
+## 持续集成
+
+- `CI` 工作流会在每次推送或拉取请求时自动运行 `./build.sh`，确保 `LoongArch` 子模块可以在通用 Linux 环境中成功编译。
+- 若需要调整构建选项，可在 `.github/workflows/ci.yml` 中更新所需的依赖或脚本。
+
 ---
