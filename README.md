@@ -2,6 +2,50 @@
 
 OsTools 是一套专为 Loongson（龙芯）平台设计的系统工具集，通过命令行子命令，支持硬件寄存器读取、固件更新、硬件状态检测等多种操作。核心功能基于 C 语言实现，配套 Python/Shell 脚本辅助数据处理和自动化运维。
 
+## 架构总览
+
+```mermaid
+flowchart TB
+    subgraph Tooling
+        Build["build.sh / make -C LoongArch"]
+        CLI["终端：sudo ./Binary <command>"]
+        Scripts["Script/*.py · *.sh"]
+    end
+    Build --> Bin["OsTools Binary\nLoongArch/main.c"]
+    CLI --> Bin
+    Scripts -->|调用/解析输出| Bin
+
+    subgraph Command Layer
+        Bin --> CmdTable["commands[] 派发"]
+        CmdTable --> CmdSPI["cmd_spi"]
+        CmdTable --> CmdGPIO["cmd_gpio"]
+        CmdTable --> CmdRTC["cmd_rtc"]
+        CmdTable --> CmdECC["cmd_ecc"]
+        CmdTable --> CmdOthers["其他 cmd_xxx"]
+    end
+
+    subgraph Driver & Helper Layer
+        CmdSPI --> I2C["i2c.c / SPI 控制器"]
+        CmdGPIO --> UTIL["util.c / MMIO 辅助"]
+        CmdRTC --> FILE["file.c /proc & sysfs"]
+        CmdECC --> PARSER["parser.c / ecc_helper"]
+        CmdOthers --> Shared["公共头文件 def.h\n寄存器/宏定义"]
+    end
+
+    subgraph Hardware & Data
+        I2C --> HW["Loongson 硬件\nSPI · GPIO · RTC · 传感器"]
+        UTIL --> HW
+        FILE --> OS["Linux 内核接口\n/proc · sysfs"]
+        PARSER --> Logs["固件/日志/CSV"]
+        Logs --> Scripts
+    end
+```
+
+- **工具入口**：`build.sh`/`make` 产出二进制，终端与 `Script/` 脚本通过 `sudo ./Binary <command>` 调用统一的 `LoongArch/main.c`。
+- **命令层**：`commands[]` 里的 `cmd_spi`、`cmd_gpio`、`cmd_rtc`、`cmd_ecc` 及其他 `cmd_xxx` 组合业务逻辑与参数解析。
+- **驱动层**：`i2c.c`、`util.c`、`file.c`、`parser.c` 等抽象底层寄存器、I²C、/proc、日志解析，并共享 `def.h` 常量。
+- **数据闭环**：驱动层把硬件与 OS 数据送回，脚本继续消费日志/CSV，形成由命令行触发、脚本分析的闭环。
+
 ## 安装说明
 
 ### 环境要求
