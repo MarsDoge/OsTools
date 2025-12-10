@@ -57,7 +57,7 @@ flowchart TB
 
 ### 依赖
 
-- 编译依赖：GNU Make、GCC、git
+- 编译依赖：GNU Make、GCC、git（可选）、glibc-static（可选）
 - 脚本依赖（可选）：numpy、pandas、matplotlib、requests、beautifulsoup4
 
 ### 编译与安装

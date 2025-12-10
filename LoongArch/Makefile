@@ -21,10 +21,17 @@ else
 endif
 CFLAGS += -DGIT_COMMIT_ID="\"$(GIT_COMMIT_ID)\""
 
+LIBC_STATIC = $(shell echo "int main(){}" | $(COMPILE_PATH) -x c - --static -o /dev/null > /dev/null 2>&1 || echo "1")
+ifeq ($(LIBC_STATIC),)
+	LD_STATIC := -static
+else
+	LD_STATIC :=
+endif
+
 all: OsTools
 ##.PHONY all SEnd
 OsTools: $(OBJS)
-	$(COMPILE_PATH) -static $^ -o $@
+	$(COMPILE_PATH) $(LD_STATIC) $^ -o $@
 	chmod 777 $@
 
 %.o: %.c
