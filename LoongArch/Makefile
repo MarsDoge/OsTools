@@ -13,9 +13,9 @@ GIT_COMMIT_ID := $(shell git rev-parse HEAD)
 
 ARCH := $(shell uname -m)
 ifeq ($(ARCH),loongarch64)
-CFLAGS = -DPLATFORM_LA64
+CFLAGS = -DPLATFORM_LA64 -std=gnu11
 else ifeq ($(ARCH),mips64)
-CFLAGS = -DPLATFORM_MIPS64
+CFLAGS = -DPLATFORM_MIPS64 -std=gnu11
 else
     $(warning Unsupported architecture: $(ARCH))
 endif
