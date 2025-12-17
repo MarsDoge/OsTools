@@ -68,7 +68,8 @@ int main (int argc, const char *argv[])
     }
 
     /*create file: cpu_name*/
-    system("cat /proc/cpuinfo | grep 'model name' | awk 'NR==1 {print $4}' > "FILE_NAME_1);
+    //system("cat /proc/cpuinfo | grep 'model name' | awk 'NR==1 {print $4}' > "FILE_NAME_1);
+    system("awk -F: 'tolower($1) ~ /model name/ {print $2; exit}' ""/proc/cpuinfo | sed 's/^ *//' > " FILE_NAME_1);
 
     /* Try to run command with args provided. */
     struct cmd_struct *cmd = NULL;
