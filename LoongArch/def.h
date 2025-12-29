@@ -10,7 +10,7 @@
 #endif
 
 #define PROGRAM_NAME "OsTools"
-#define PROGRAM_VERSION "1.6"
+#define PROGRAM_VERSION "1.7"
 
 #define LS7A_CONF_BASE_ADDR   0x10010000
 #define LS7A_MISC_BASE_ADDR   0x10080000
