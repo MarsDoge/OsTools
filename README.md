@@ -54,6 +54,7 @@ flowchart TB
 - 需预装 gcc、make
 - Python 环境（部分脚本功能可选）
 - 部分命令需 root 权限
+- 部分直接访问物理地址 / MMIO / SPI 控制器寄存器的命令，可能还需要在内核启动参数中启用 `iomem=relaxed`；否则 `/dev/mem` 访问或内存映射可能被内核拒绝
 
 ### 依赖
 
@@ -120,6 +121,8 @@ Arguments:
     -m, --mac <addr>      MAC address (如 00:11:22:33:44:55)
     -c, --count <int>     read count (读取长度)
 ```
+
+如果执行 `gpio`、`spi`、`conf` 或其他直接访问物理寄存器的命令时出现 `/dev/mem` 打开失败、`mmap` 失败，或访问被拒绝等错误，请检查当前内核命令行是否允许原始 I/O 内存访问。某些平台需要额外启用 `iomem=relaxed` 才能正常使用这些命令。
 
 ### 固件更新/备份示例
 
