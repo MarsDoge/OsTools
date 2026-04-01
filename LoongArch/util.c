@@ -14,6 +14,11 @@
 #define MAC_ADDRESS_LEN 6		/* mac地址长为6位十六进制数*/
 typedef int bool;
 
+static void print_iomem_relaxed_hint(void)
+{
+    printf("Hint: raw physical/MMIO access may require enabling iomem=relaxed in the kernel command line.\n");
+}
+
 static unsigned long long memmask;
 static int memoffset;
 uchar aucResMac[MAC_ADDRESS_LEN+1]={0};
@@ -152,6 +157,11 @@ void *vtpa(unsigned long long vaddr,int fd)
     memmask = vaddr & ~(0xffff);
     memoffset = vaddr & (0xffff);
     p = (void*)mmap(NULL,0x10000/*64K*/, PROT_READ|PROT_WRITE,MAP_SHARED,fd,memmask);
+    if (p == MAP_FAILED) {
+        printf("mmap failed for physical address 0x%llx\n", vaddr);
+        print_iomem_relaxed_hint();
+        return NULL;
+    }
     p = p + memoffset;
     printf("mmap addr start : %p \n",p);
     return p;
