@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0
 #include <stdio.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -9,10 +10,7 @@
 
 #define uint unsigned int
 #define uchar unsigned char
-#define true  1
-#define false 0
 #define MAC_ADDRESS_LEN 6		/* mac地址长为6位十六进制数*/
-typedef int bool;
 
 static void print_iomem_relaxed_hint(void)
 {
