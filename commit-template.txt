@@ -1,13 +1,14 @@
-Title: 
-
-Description:
-- 
-
-Issues:
-- 
-
-Fix:
-- 
-
-Way or Option:
-- 
+# <type>(<scope>): <简短说明>
+# 标题建议不超过 72 字符。请在本行上方填写标题，并与正文空一行。
+#
+# 说明为什么修改，以及修改后的行为；简单修改可以省略正文。
+#
+# 验证：
+# - 实际执行的检查及结果；未执行的测试请如实说明。
+#
+# 关联：#<issue，可选，无关联时省略>
+#
+# type: feat | fix | refactor | build | ci | docs | test
+# scope: spi、loongarch、smbios 等受影响模块。
+# 示例：feat(spi): make write-protection fallback configurable
+# 注释行在正常交互式 git commit 中会被移除。
