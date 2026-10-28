@@ -106,6 +106,9 @@ int is3c = 0;
 int is3d = 0;
 int debug_1 = 1;
 
+/* Enable the WREN/WRSR fallback for flash chips without EWSR support. */
+static int write_protection = 0;
+
     VOID
 SpiFlashSetCs (
         INTN Bit
@@ -330,20 +333,20 @@ SpiFlashDisableWriteProtection (
     SpiFlashWriteStatus(Val);
     SpiFlashWait ();
 
-#if ENABLE_WRITE_PROTECTION
-    /*some flash not support 0x50 need the follow code*/
-    SpiFlashSetCs (0);
-    SpiFlashWriteByteCmd (WREN);
-    SpiFlashSetCs (1);
-    SpiFlashSetCs (0);
-    SpiFlashWriteByteCmd (WRSR);
-    SpiFlashWriteByteCmd (Val);
-    SpiFlashSetCs (1);
-    SpiFlashWait ();
-    SpiFlashSetCs (0);
-    SpiFlashWriteByteCmd (WREN);
-    SpiFlashSetCs (1);
-#endif
+    if (write_protection) {
+        /*some flash not support 0x50 need the follow code*/
+        SpiFlashSetCs (0);
+        SpiFlashWriteByteCmd (WREN);
+        SpiFlashSetCs (1);
+        SpiFlashSetCs (0);
+        SpiFlashWriteByteCmd (WRSR);
+        SpiFlashWriteByteCmd (Val);
+        SpiFlashSetCs (1);
+        SpiFlashWait ();
+        SpiFlashSetCs (0);
+        SpiFlashWriteByteCmd (WREN);
+        SpiFlashSetCs (1);
+    }
 }
 
     VOID
@@ -356,23 +359,23 @@ SpiFlashEnableWriteProtection (
     Val = (BP0 | BP1 | BP2);
     SpiFlashWriteStatus(Val);
     SpiFlashWait ();
-#if ENABLE_WRITE_PROTECTION
-    /*some flash not support 0x50 need the follow code*/
-    SpiFlashSetCs (0);
-    SpiFlashWriteByteCmd (WREN);
-    SpiFlashSetCs (1);
-    SpiFlashSetCs (0);
-    SpiFlashWriteByteCmd (WRSR);
-    SpiFlashWriteByteCmd (Val);
-    SpiFlashSetCs (1);
-    SpiFlashWait ();
+    if (write_protection) {
+        /*some flash not support 0x50 need the follow code*/
+        SpiFlashSetCs (0);
+        SpiFlashWriteByteCmd (WREN);
+        SpiFlashSetCs (1);
+        SpiFlashSetCs (0);
+        SpiFlashWriteByteCmd (WRSR);
+        SpiFlashWriteByteCmd (Val);
+        SpiFlashSetCs (1);
+        SpiFlashWait ();
 
-    SpiFlashSetCs (0);
-    SpiFlashWriteByteCmd (WRDI);
-    SpiFlashSetCs (1);
-    /*wait command executed done*/
-    SpiFlashWait();
-#endif
+        SpiFlashSetCs (0);
+        SpiFlashWriteByteCmd (WRDI);
+        SpiFlashSetCs (1);
+        /*wait command executed done*/
+        SpiFlashWait();
+    }
 }
 
     VOID
@@ -1039,6 +1042,8 @@ int cmd_spi (int argc, const char **argv)
     int data = 0;
     int offset = 0;
 
+    write_protection = 0;
+
     struct argparse_option options[] = {
         OPT_HELP (),
         OPT_GROUP ("Options:"),
@@ -1048,6 +1053,7 @@ int cmd_spi (int argc, const char **argv)
         OPT_BOOLEAN ('g', "gmac", &flag_gmac, "update gmac flash", NULL, 0, 0),
         OPT_BOOLEAN ('t', "tcm", &flag_tcm, "read ls7a tcm from address", NULL, 0, 0),
         OPT_BOOLEAN ('s', "smbios", &flag_smbios, "update smbios ls3a spi flash", NULL, 0, 0),
+        OPT_BOOLEAN (0, "write-protection", &write_protection, "enable WREN/WRSR write-protection fallback (default: off)", NULL, 0, 0),
         OPT_GROUP ("Arguments:"),
         OPT_STRING  ('f', "file", &file, "file path to read/write", NULL, 0, 0),
         OPT_STRING  ('a', "address", &addr, "Pci's spi control address(e.g. 1fe001f0)", NULL, 0, 0),
@@ -1125,3 +1131,4 @@ int cmd_spi (int argc, const char **argv)
 
     return 0;
 }
+
