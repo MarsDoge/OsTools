@@ -1015,7 +1015,7 @@ static int spi_read_flash (const char* addr, int count)
     return status;
 }
 
-int spi_update_smbios(const char *addr, int command, const char **arg);
+int spi_update_smbios(const char *addr, unsigned int maxsize, int command, const char **arg);
 
 static const char *const spi_usages[] = {
     PROGRAM_NAME" spi <args>",
@@ -1124,7 +1124,7 @@ int cmd_spi (int argc, const char **argv)
         }
         spi_update_gmac(addr, id, mac);
     } else if (flag_smbios) {
-        spi_update_smbios(addr,command,argv);
+        spi_update_smbios(addr,count,command,argv);
     } else if (flag_write) {
         spi_update_region(addr, offset, data);
     }
